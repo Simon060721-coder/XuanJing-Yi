@@ -1,0 +1,40 @@
+/* 玄镜易特有样式 */
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+  padding: 2.5rem 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .content {
+    padding: 2rem 1.2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 1.5rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 1rem 0.8rem;
+  }
+}
+
+.glass-page-shell {
+  min-height: 100vh;
+  background: rgba(243, 232, 211, 0.06);
+  border: 1px solid rgba(255, 244, 230, 0.12);
+  backdrop-filter: blur(18px);
+}
