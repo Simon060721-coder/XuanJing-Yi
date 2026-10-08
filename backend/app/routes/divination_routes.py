@@ -3,7 +3,7 @@ from flask import request, jsonify
 from datetime import datetime
 from app.routes import divination_bp
 from app.services.divination_engine import DivinationEngine
-from app.services.mapping_service import MappingService
+from app.services.mapping_service import MappingService, element_relation
 from app.models.hexagram import DivinationQuery
 from app import db
 
@@ -12,9 +12,13 @@ mapping_service = MappingService()
 
 @divination_bp.route('/divination/query', methods=['POST'])
 def query_divination():
-    """占卜查询API"""
+    """占卜查询API（梅花易数）
+
+    返回的是**真正的六十四卦**（主卦／变卦），而不是两个独立的八卦。
+    体卦、用卦按动爻所在卦判定。
+    """
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
 
         # 验证输入
         query_type = data.get('query_type', '梅花易数')
@@ -25,117 +29,162 @@ def query_divination():
 
         # 根据输入方法起卦
         if input_method == '时间':
-            timestamp = datetime.fromisoformat(data.get('timestamp', datetime.now().isoformat()))
-            hexagram_data = engine.query_by_timestamp(timestamp)
+            try:
+                raw = data.get('timestamp') or datetime.now().isoformat()
+                text = str(raw).strip()
+                if text.endswith(('Z', 'z')):
+                    text = text[:-1] + '+00:00'
+                timestamp = datetime.fromisoformat(text)
+                # 前端发的是**带时区**的 ISO 串（`toISOString()` 以 Z 结尾），
+                # 而引擎按 naive 当地时间推四柱。必须先转成本地时间再去掉时区，
+                # 否则会在干支换算里抛「can't compare offset-naive and offset-aware」。
+                # 这与六爻路由 _parse_moment 的约定一致。
+                if timestamp.tzinfo is not None:
+                    timestamp = timestamp.astimezone().replace(tzinfo=None)
+            except ValueError:
+                return jsonify({'error': 'timestamp 不是合法的 ISO 时间'}), 400
+            cast = engine.query_by_timestamp(timestamp)
         elif input_method == '数字':
-            num1 = int(data.get('num1', 0))
-            num2 = int(data.get('num2', 0))
-            num3 = int(data.get('num3', 0))
-            hexagram_data = engine.query_by_numbers(num1, num2, num3)
+            try:
+                num1 = int(data.get('num1', 0))
+                num2 = int(data.get('num2', 0))
+                num3 = int(data.get('num3', 0))
+            except (TypeError, ValueError):
+                return jsonify({'error': '数字起卦需要三个整数'}), 400
+            if not all(1 <= n <= 99 for n in (num1, num2, num3)):
+                return jsonify({'error': '三个数字均需在 1-99 之间'}), 400
+            cast = engine.query_by_numbers(num1, num2, num3)
         else:
             return jsonify({'error': '不支持的输入方法'}), 400
 
-        # 提取卦象信息
-        primary_hex = hexagram_data['primary_hexagram']
-        secondary_hex = hexagram_data['secondary_hexagram']
-        changing_lines = hexagram_data['changing_lines']
+        primary = cast['primary_hexagram']
+        changed = cast['changed_hexagram']
+        changing_line = cast['changing_line']
+        body = cast['body']
+        use = cast['use']
 
-        # 获取卦象编号并分析五行
-        primary_hex_num = next(
-            (num for num, value in engine.HEXAGRAMS.items() if value['name'] == primary_hex['name']),
-            None
-        )
-        secondary_hex_num = next(
-            (num for num, value in engine.HEXAGRAMS.items() if value['name'] == secondary_hex['name']),
-            None
-        )
-        if primary_hex_num is None or secondary_hex_num is None:
-            return jsonify({'error': '无法识别卦象编号'}), 500
+        # 体用五行关系——**吉凶评分与解读文案共用同一来源**，故两者不会矛盾
+        relation = element_relation(body, use)
+        fortune = engine.calculate_fortune_score(relation, changing_line, body, use)
 
-        element_analysis = engine.analyze_elements([primary_hex_num, secondary_hex_num])
+        # 解读文案以（体, 用）为键；多维评分（aspects）已弃用——那五个数是同一
+        # 基准分加固定偏移，维度差异与卦象、所问皆无关，故不再计算也不返回
+        hexagram_meaning = mapping_service.get_hexagram_meaning(body, use)
+        fortune_label = mapping_service.get_fortune_label(
+            hexagram_meaning.get('fortune', 'moderate'))
 
-        # 计算吉凶评分
-        fortune_analysis = engine.calculate_fortune_score(
-            primary_hex_num,
-            secondary_hex_num,
-            element_analysis['balance_score'],
-            changing_lines[0]
-        )
-
-        # 获取卦象体用解读（64组全覆盖）
-        hexagram_meaning = mapping_service.get_hexagram_meaning(primary_hex['name'], secondary_hex['name'])
-
-        # 获取所有维度的分析结果（5维度全覆盖）
-        all_aspects = mapping_service.get_all_aspects(primary_hex['name'], secondary_hex['name'])
-
-        # 获取吉凶中文名
-        fortune_label = mapping_service.get_fortune_label(hexagram_meaning.get('fortune', 'moderate'))
-
-        # 构建完整响应
         result = {
             'status': 'success',
             'data': {
                 'hexagram_layer': {
-                    'primary_hexagram': f"{primary_hex['name']}（{primary_hex['symbol']}）",
-                    'secondary_hexagram': f"{secondary_hex['name']}（{secondary_hex['symbol']}）",
-                    'changing_lines': changing_lines,
-                    'elements': element_analysis['elements']
+                    'primary_hexagram': '{0}（{1}）'.format(primary['name'], primary['symbols']),
+                    'secondary_hexagram': '{0}（{1}）'.format(changed['name'], changed['symbols']),
+                    'changing_lines': [changing_line],
+                    # 六爻（自初爻起），画卦直接用；upper/lower 为干净的上下卦信息
+                    'yaos': cast['yaos'],
+                    'upper': {
+                        'name': cast['upper']['name'],
+                        'symbol': cast['upper']['symbol'],
+                        'element': cast['upper']['element'],
+                        'direction': cast['upper']['direction'],
+                    },
+                    'lower': {
+                        'name': cast['lower']['name'],
+                        'symbol': cast['lower']['symbol'],
+                        'element': cast['lower']['element'],
+                        'direction': cast['lower']['direction'],
+                    },
+                    'upper_hexagram': '{0}（{1}）'.format(
+                        cast['upper']['name'], cast['upper']['symbol']),
+                    'lower_hexagram': '{0}（{1}）'.format(
+                        cast['lower']['name'], cast['lower']['symbol']),
+                    'body_hexagram': body,
+                    'use_hexagram': use,
+                    'elements': {
+                        '体': engine.TRIGRAM_INFO[body]['element'],
+                        '用': engine.TRIGRAM_INFO[use]['element'],
+                    },
                 },
                 'analysis_layer': {
-                    'fortune_score': fortune_analysis['fortune_score'],
-                    'fortune_level': fortune_analysis['fortune_level'],
+                    'fortune_score': fortune['fortune_score'],
+                    'fortune_level': fortune['fortune_level'],
                     'fortune_label': fortune_label,
-                    'element_balance': element_analysis['balance_level'],
-                    'balance_score': element_analysis['balance_score']
+                    'element_balance': engine.RELATION_LABELS[relation],
+                    'relation': relation,
                 },
                 'advice_layer': {
                     'main_interpretation': hexagram_meaning['meaning'],
                     'fortune_type': hexagram_meaning.get('fortune', 'moderate'),
                     'fortune_label': fortune_label,
-                    'keywords': hexagram_meaning.get('keywords', [])
+                    'keywords': hexagram_meaning.get('keywords', []),
                 },
-                'aspects_layer': all_aspects
+                # 起卦所用的数（时间起卦为年/月/日/时数，数字起卦为三数），
+                # 前端"取数"动效据此逐项展示，不必再算一遍
+                'calculation': cast['calculation'],
             },
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.utcnow().isoformat(),
         }
 
-        # 保存查询记录（可选）
+        # 保存查询记录
         record = DivinationQuery(
             query_type=query_type,
             input_method=input_method,
             input_value=str(data),
-            primary_hexagram=primary_hex['name'],
-            secondary_hexagram=secondary_hex['name'],
-            changing_lines=str(changing_lines),
-            fortune_score=fortune_analysis['fortune_score'],
-            fortune_level=fortune_analysis['fortune_level'],
+            primary_hexagram=primary['name'],
+            secondary_hexagram=changed['name'],
+            changing_lines=str([changing_line]),
+            fortune_score=fortune['fortune_score'],
+            fortune_level=fortune['fortune_level'],
             analysis_result=result['data'],
             query_timestamp=datetime.utcnow()
         )
         db.session.add(record)
         db.session.commit()
 
+        result['data']['record_id'] = record.id
         return jsonify(result), 200
 
     except Exception as e:
-        # 打印完整异常堆栈到控制台，便于调试
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+
 @divination_bp.route('/hexagrams', methods=['GET'])
 def get_hexagrams():
-    """获取所有卦象列表"""
-    hexagrams = []
-    for num, hex_info in DivinationEngine.HEXAGRAMS.items():
-        hexagrams.append({
-            'number': num,
-            'name': hex_info['name'],
-            'symbol': hex_info['symbol'],
-            'element': hex_info['element'],
-            'direction': hex_info['direction']
-        })
-    return jsonify({'status': 'success', 'data': hexagrams}), 200
+    """获取六十四卦列表（含所属宫、世应、上下卦）。
+
+    旧实现返回的是八个**八卦**，与端点名不符；现返回真正的六十四卦，
+    八卦信息另置于 `trigrams` 字段。
+    """
+    from app.services.liuyao.hexagrams import HEXAGRAMS as LIUYAO_HEXAGRAMS
+
+    hexagrams = [{
+        'name': h['name'],
+        'symbols': h['symbols'],
+        'upper': h['upper'],
+        'lower': h['lower'],
+        'palace': h['palace'],
+        'palace_element': h['palace_element'],
+        'stage': h['stage'],
+        'shi': h['shi'],
+        'ying': h['ying'],
+    } for h in LIUYAO_HEXAGRAMS.values()]
+
+    trigrams = [{
+        'number': num,
+        'name': info['name'],
+        'symbol': info['symbol'],
+        'element': info['element'],
+        'direction': info['direction'],
+    } for num, info in sorted(DivinationEngine.HEXAGRAMS.items())]
+
+    return jsonify({
+        'status': 'success',
+        'data': hexagrams,
+        'trigrams': trigrams,
+        'total': len(hexagrams),
+    }), 200
 
 @divination_bp.route('/health', methods=['GET'])
 def health_check():
@@ -246,6 +295,29 @@ def delete_divination_record(record_id):
         db.session.delete(record)
         db.session.commit()
         return jsonify({'status': 'success', 'message': '记录已删除'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@divination_bp.route('/divination/history', methods=['DELETE'])
+def clear_divination_history():
+    """清空**全部**占卜记录（历史页的「清空历史」）。
+
+    与单条删除同一个资源路径，靠 HTTP 方法 + 有无 id 区分：
+    DELETE /divination/history        → 清空全部
+    DELETE /divination/history/<id>   → 删一条
+
+    返回实际删除条数，供前端核对与提示。分页只影响展示，不影响删除范围。
+    """
+    try:
+        deleted = DivinationQuery.query.delete()
+        db.session.commit()
+        return jsonify({
+            'status': 'success',
+            'message': '历史已清空',
+            'data': {'deleted': deleted},
+        }), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500

@@ -20,8 +20,12 @@ ELEMENT_GENERATION = {'金': '水', '水': '木', '木': '火', '火': '土', '�
 ELEMENT_RESTRICTION = {'金': '木', '木': '土', '土': '水', '水': '火', '火': '金'}
 
 
-def _element_relation(p: str, s: str) -> str:
-    """判断两卦的五行关系"""
+def element_relation(p: str, s: str) -> str:
+    """判断两卦的五行关系（p 为体、s 为用）。
+
+    这是「体用关系」的**唯一来源**：吉凶评级与评分都由此推出，
+    以保证两者不会互相矛盾。
+    """
     if p == s:
         return 'same'
     pe, se = ELEMENTS[p], ELEMENTS[s]
@@ -34,6 +38,10 @@ def _element_relation(p: str, s: str) -> str:
     if ELEMENT_RESTRICTION[se] == pe:
         return 'attack'  # 用克体，受克
     return 'neutral'
+
+
+# 兼容旧调用名
+_element_relation = element_relation
 
 
 def _build_meaning(p: str, s: str) -> Dict:

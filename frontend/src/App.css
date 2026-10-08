@@ -32,9 +32,4 @@
   }
 }
 
-.glass-page-shell {
-  min-height: 100vh;
-  background: rgba(243, 232, 211, 0.06);
-  border: 1px solid rgba(255, 244, 230, 0.12);
-  backdrop-filter: blur(18px);
-}
+/* 玻璃拟态（.glass-card / .glass-panel）统一定义在 index.css，此处不再重复 */

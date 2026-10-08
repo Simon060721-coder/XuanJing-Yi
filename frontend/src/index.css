@@ -2,40 +2,98 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* 玄镜易自定义全局样式 */
-
+/* ==========================================================================
+   玄镜易 · 设计令牌（玄墨金）
+   --------------------------------------------------------------------------
+   本区块是全站配色的唯一来源。
+   · tailwind.config.js 只负责「读取」，不定义任何色值；
+   · 组件只使用令牌类名，不出现硬编码色值。
+   通道值写作 "R G B"，以便 Tailwind 以 rgb(var(--x) / <alpha-value>) 形式
+   支持 bg-xuanjing-gold/20 这类透明度修饰符。
+   换配色只需改本区块，组件无需改动。
+   ========================================================================== */
 :root {
-  --color-bg-primary: #2B1C16;
-  --color-bg-secondary: #3A2920;
-  --color-bg-tertiary: rgba(243, 232, 211, 0.18);
-  --color-accent-primary: #A57D59;
-  --color-accent-danger: #8B4A29;
-  --color-accent-success: #7F6A53;
-  --color-text-primary: #F3E8D3;
-  --color-text-secondary: #B9A490;
-  --color-text-muted: #8A7A6C;
-  --color-border-light: rgba(255, 255, 255, 0.12);
-  --color-border-default: rgba(255, 255, 255, 0.14);
-  --color-border-dark: rgba(0, 0, 0, 0.35);
-}
+  color-scheme: dark;
 
-body {
-  @apply text-xuanjing-cream font-body;
-  overflow-x: hidden;
-  min-height: 100vh;
-  background-image:
-    radial-gradient(circle at top, rgba(243, 232, 211, 0.16), transparent 28%),
-    linear-gradient(180deg, #3A2920 0%, #1D120D 52%, #1A110C 100%);
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  color: var(--color-text-primary);
+  /* 背景三级 */
+  --xj-ink: 14 15 18;          /* #0E0F12 主背景 */
+  --xj-ink-2: 20 22 27;        /* #14161B 导航 / 页脚 */
+  --xj-ink-3: 28 30 36;        /* #1C1E24 输入框 / 悬浮面 */
+  --xj-ink-deep: 11 12 15;     /* #0B0C0F 背景渐变收尾 */
+
+  /* 强调：暗金 */
+  --xj-gold: 198 165 103;      /* #C6A567 */
+  --xj-gold-bright: 216 188 133; /* #D8BC85 悬停 */
+  --xj-gold-deep: 150 118 68;  /* #967644 描边 / 弱强调 */
+
+  /* 朱砂：警示与「凶」 */
+  --xj-cinnabar: 158 59 50;    /* #9E3B32 填充 */
+  --xj-cinnabar-text: 200 96 78; /* #C8604E 文字（深底上更易读） */
+
+  /* 青玉：吉 */
+  --xj-jade: 110 158 130;      /* #6E9E82 */
+  --xj-jade-bright: 143 191 159; /* #8FBF9F 大吉 */
+
+  /* 文字三级 */
+  --xj-paper: 236 231 221;     /* #ECE7DD 主文字 */
+  --xj-paper-dim: 165 160 153; /* #A5A099 次文字 */
+  --xj-paper-faint: 138 133 126; /* #8A857E 弱文字（主背景 5.24:1、输入框面 4.55:1，均达 AA） */
+
+  /* 描边（等效于白色 10% 叠加于主背景） */
+  --xj-line: 38 39 45;         /* #26272D */
+
+  /* 玻璃拟态需要真实透明度，故保留 rgba */
+  --xj-glass-bg: rgba(255, 255, 255, 0.045);
+  --xj-glass-bg-strong: rgba(255, 255, 255, 0.07);
+  --xj-glass-border: rgba(255, 255, 255, 0.1);
+  --xj-glass-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+
+  /* 铜钱质感：径向渐变四档 + 刻字色 */
+  /* 铜钱：青铜，与龟甲同材质（选定的 B 方案）。
+     明度故意压低以贴合青铜龟甲——铜钱的正反靠下方标记辨读，不依赖铜钱本身够亮。 */
+  --xj-coin-hi: #E2D6AE;      /* 高光 */
+  --xj-coin-light: #BFB083;   /* 受光面 */
+  --xj-coin-base: #8E8055;
+  --xj-coin-mid: #5E5436;
+  --xj-coin-dark: #2B2618;    /* 边缘暗部 */
+  --xj-coin-engrave: rgba(26, 22, 10, 0.92);
+  --xj-coin-rim: rgba(226, 214, 174, 0.45);  /* 外缘凸起的反光 */
+
+  /* 龟甲质感：青铜（照实拍青铜龟甲参考图取色）
+     要点：本体是**暗青铜**（偏褐、低饱和），沟缝是**磨亮的黄铜凸线**。
+     早先用的是亮琥珀金，读起来像塑料——亮金色在深底上很难不像塑料。 */
+  --xj-shell-deep: #17110A;
+  --xj-shell-dark: #2B2114;
+  --xj-shell-mid: #463726;
+  --xj-shell-warm: #5F4C31;
+  --xj-shell-honey: #7A6240;
+  --xj-shell-light: #9E8455;
+  --xj-shell-suture: #A08A58;
+  --xj-shell-gloss: #DCC894;
+
+  /* 青铜按钮色：**采样自梅花易数八卦盘本身**（盘体整体中位 #665A44、
+     受光区 #877658），故写作通道三元组以便用 bg-xuanjing-bronze/20 这类修饰符。 */
+  --xj-bronze: 102 90 68;
+  --xj-bronze-light: 135 118 88;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* 执笹体样式 */
+body {
+  @apply font-body text-xuanjing-paper;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-color: rgb(var(--xj-ink));
+  background-image:
+    radial-gradient(circle at 50% 0%, rgb(var(--xj-gold) / 0.1), transparent 34%),
+    linear-gradient(180deg, rgb(var(--xj-ink-2)) 0%, rgb(var(--xj-ink)) 55%, rgb(var(--xj-ink-deep)) 100%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* 等宽体样式 */
 code {
   @apply font-mono text-sm;
 }
@@ -46,24 +104,25 @@ code {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 244, 230, 0.08);
+  background: rgb(var(--xj-paper) / 0.06);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(165, 125, 89, 0.55);
+  background: rgb(var(--xj-gold) / 0.45);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(165, 125, 89, 0.8);
+  background: rgb(var(--xj-gold) / 0.7);
 }
 
+/* 玻璃面板：全站唯一的玻璃拟态定义 */
 .glass-card,
 .glass-panel {
-  background: rgba(243, 232, 211, 0.14);
-  border: 1px solid rgba(255, 244, 230, 0.16);
+  background: var(--xj-glass-bg);
+  border: 1px solid var(--xj-glass-border);
   backdrop-filter: blur(20px);
-  box-shadow: 0 24px 70px rgba(12, 7, 5, 0.17);
+  box-shadow: var(--xj-glass-shadow);
 }
 
 .glass-card {
@@ -76,8 +135,14 @@ code {
 
 /* 文本选择 */
 ::selection {
-  background: rgba(165, 125, 89, 0.28);
-  color: #1d120d;
+  background: rgb(var(--xj-gold) / 0.3);
+  color: rgb(var(--xj-ink));
+}
+
+/* 键盘焦点可见性 */
+:focus-visible {
+  outline: 2px solid rgb(var(--xj-gold) / 0.7);
+  outline-offset: 2px;
 }
 
 * {

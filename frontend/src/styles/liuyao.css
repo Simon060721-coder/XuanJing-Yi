@@ -1,0 +1,494 @@
+/* ==========================================================================
+   六爻摇卦仪式 · 动画与卦盘样式
+   --------------------------------------------------------------------------
+   配色约定（务必注意）
+   ------------------
+   index.css 里的 --xj-* 分为两类：
+     · 通道三元组（如 --xj-gold: 198 165 103）——**只能**写成 rgb(var(--xj-gold))，
+       裸用（stroke: var(--xj-gold)）是非法值，声明会被静默丢弃；
+     · 完整颜色（如 --xj-shell-hi: #5C4830、--xj-coin-engrave: rgba(...)）——可直接用。
+   本文件早期版本正是在这一点上出了系统性错误，导致描边、渐变、文字颜色全部失效。
+
+   动画时序与 LiuyaoPage.tsx 中的阶段常量一一对应。
+   ========================================================================== */
+
+/* ── 龟壳摇晃：上下有幅度地摇几下，幅度递减后收住 ─────────────────── */
+@keyframes shell-shake {
+  0%   { transform: translateY(0) rotate(0deg); }
+  12%  { transform: translateY(-16px) rotate(-3.2deg); }
+  26%  { transform: translateY(6px) rotate(2.6deg); }
+  40%  { transform: translateY(-13px) rotate(-2.2deg); }
+  54%  { transform: translateY(5px) rotate(1.8deg); }
+  68%  { transform: translateY(-8px) rotate(-1.2deg); }
+  82%  { transform: translateY(3px) rotate(0.7deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+.ritual-shell-shaking {
+  animation: shell-shake 0.72s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  transform-origin: 50% 88%;
+}
+
+@keyframes shell-idle-breathe {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+
+.ritual-shell-idle {
+  animation: shell-idle-breathe 4.5s ease-in-out infinite;
+}
+
+/* ── 铜钱：从龟壳开口落下 → 依次排开 → 绕中轴旋转 → 一枚一枚停定 ────
+   刻意拆成两层：
+     .coin       负责定位、透明度、与「落下／排开」的位移（无 3D）
+     .coin-spin  只负责 rotateY，并持有 preserve-3d
+   原因：.coin 上不能出现 opacity 动画或 will-change: opacity——它们会让
+   preserve-3d 退化为 flat，两个面就永远只显示背面（这是实际踩过的坑）。 */
+@keyframes coin-fly {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -8px, 0) scale(0.68);
+    animation-timing-function: cubic-bezier(0.3, 0.05, 0.5, 1);
+  }
+  10% {
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  30% {
+    opacity: 1;
+    transform: translate3d(0, 54px, 0) scale(1.05);
+    animation-timing-function: cubic-bezier(0.35, 0, 0.5, 1);
+  }
+  55% {
+    opacity: 1;
+    transform: translate3d(var(--slot-x), 34px, 0) scale(1);
+    animation-timing-function: cubic-bezier(0.12, 0.86, 0.22, 1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(var(--slot-x), 96px, 0) scale(1);
+  }
+}
+
+@keyframes coin-spin {
+  0% {
+    transform: rotateY(0deg);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  30% {
+    transform: rotateY(300deg);
+    animation-timing-function: cubic-bezier(0.35, 0, 0.5, 1);
+  }
+  55% {
+    transform: rotateY(660deg);
+    /* 最后一段先快后慢，做出减速停定的手感 */
+    animation-timing-function: cubic-bezier(0.12, 0.86, 0.22, 1);
+  }
+  100% {
+    transform: rotateY(var(--end-rot));
+  }
+}
+
+.coin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 78px;
+  height: 78px;
+  margin: -39px 0 0 -39px;
+  /* 基态为可见：animation-fill-mode: both 会用 0% 那一帧盖住起始，
+     万一行情不对（动画未生效）也只是"铜钱停在开口"，而不是整个消失。 */
+  opacity: 1;
+  pointer-events: none;
+}
+
+.coin-flying {
+  animation-name: coin-fly;
+  animation-duration: calc(1.55s + var(--coin-i) * 0.16s);
+  animation-delay: calc(var(--coin-i) * 0.12s);
+  animation-fill-mode: both;
+}
+
+.coin-spin {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  /* 不要在此加 will-change: opacity / opacity 动画，见上方注释 */
+}
+
+.coin-spin-flying {
+  animation-name: coin-spin;
+  animation-duration: calc(1.55s + var(--coin-i) * 0.16s);
+  animation-delay: calc(var(--coin-i) * 0.12s);
+  animation-fill-mode: both;
+}
+
+.coin-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 两层光：主光在左上，另一道**反向的暖色反光**在右下。
+     金属之所以像金属，靠的就是这道与主光反向的边缘反光——
+     只有单光源的径向渐变，出来一定是塑料感。 */
+  background:
+    radial-gradient(
+      circle at 74% 84%,
+      rgba(255, 226, 166, 0.34) 0%,
+      rgba(255, 226, 166, 0) 44%
+    ),
+    radial-gradient(
+      circle at 32% 26%,
+      var(--xj-coin-hi) 0%,
+      var(--xj-coin-light) 22%,
+      var(--xj-coin-base) 50%,
+      var(--xj-coin-mid) 76%,
+      var(--xj-coin-dark) 100%
+    );
+  box-shadow:
+    inset 0 0 0 2px var(--xj-coin-rim),          /* 外缘阳线 */
+    inset 0 0 4px 3px rgba(255, 242, 208, 0.16), /* 阳线内侧的柔光 */
+    inset 0 -9px 20px rgba(52, 30, 6, 0.42),     /* 下半球转过去的暗部 */
+    inset 0 0 24px rgba(0, 0, 0, 0.34),
+    0 6px 18px rgba(0, 0, 0, 0.55);
+}
+
+/* 「字」面旋转 180°，与背面共处一个 3D 空间 */
+.coin-face-front {
+  transform: rotateY(180deg);
+}
+
+.coin-hole {
+  position: absolute;
+  width: 27%;
+  height: 27%;
+  background: rgb(var(--xj-ink));
+  border-radius: 3px;
+  box-shadow:
+    inset 0 0 9px rgba(0, 0, 0, 0.8),
+    0 0 0 1.5px rgba(255, 255, 255, 0.22);
+}
+
+.coin-char {
+  position: absolute;
+  font-size: 19px;
+  line-height: 1;
+  color: var(--xj-coin-engrave);
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.32),
+    0 0 4px rgba(255, 236, 190, 0.18);
+}
+
+/* 「背」面：素面 + 一道靠近边缘的阳线，与满字的「字」面形成鲜明对比 */
+.coin-back-ring {
+  position: absolute;
+  width: 84%;
+  height: 84%;
+  border-radius: 50%;
+  border: 1.5px solid var(--xj-coin-engrave);
+  opacity: 0.42;
+  box-shadow: 0 1px 0 rgba(255, 245, 215, 0.22);
+}
+
+/* ── 龟甲 SVG 各部 ─────────────────────────────────────────────────────
+   用 CSS 类而不是 SVG presentation attribute：attribute 不支持 var()，
+   而类走 CSS 级联，才能引用设计令牌。渐变节点用 stop-color 属性同理。
+
+   材质照实拍**青铜**龟甲：本体暗青铜，沟缝是磨亮的黄铜凸线。亮金色在深底
+   上怎么调都像塑料，哑光青铜才有古物的重量感。 */
+.shell-shadow { fill: url(#xjGroundShadow); }
+
+.shell-dome {
+  fill: url(#xjDome);
+  stroke: var(--xj-shell-deep);
+  stroke-width: 1.4;
+  stroke-opacity: 0.75;
+}
+
+/* 肋盾沟缝：浅金线在上、暗线错开一点在下，合起来就是甲片的凸起边缘 */
+.shell-suture-light {
+  fill: none;
+  stroke: var(--xj-shell-suture);
+  stroke-opacity: 0.55;
+  stroke-width: 2.4;
+}
+
+.shell-suture-dark {
+  fill: none;
+  stroke: var(--xj-shell-deep);
+  stroke-opacity: 0.35;
+  stroke-width: 1.6;
+  transform: translate(1.6px, 1.6px);
+}
+
+/* 缘盾环带：处于下缘，整体比背弓暗 */
+.shell-band {
+  fill: url(#xjBand);
+  stroke: var(--xj-shell-suture);
+  stroke-opacity: 0.28;
+  stroke-width: 1;
+}
+
+/* 奇数块缘盾再压暗一档，避免整圈一个色调 */
+.shell-band-alt {
+  fill: var(--xj-shell-deep);
+  opacity: 0.22;
+}
+
+/* 缘盾尖端提亮：外翻的小片边缘会受光 */
+.shell-rim-tip {
+  stroke: var(--xj-shell-light);
+  stroke-opacity: 0.34;
+  stroke-width: 1.8;
+}
+
+.shell-growth {
+  fill: none;
+  stroke: var(--xj-shell-light);
+  stroke-opacity: 0.14;
+  stroke-width: 1;
+}
+
+/* 椎盾脊的分节线 */
+.shell-ridge {
+  fill: none;
+  stroke: var(--xj-shell-suture);
+  stroke-opacity: 0.3;
+  stroke-width: 1.6;
+}
+
+.shell-under { fill: var(--xj-shell-deep); opacity: 0.5; }
+.shell-gloss { fill: url(#xjGlossGrad); filter: url(#xjSoft); }
+
+/* 甲片中央柔光：让每块甲片读作凸面 */
+.shell-plate { fill: url(#xjPlate); }
+.shell-stop-plate { stop-color: var(--xj-shell-light); stop-opacity: 0.2; }
+.shell-stop-plate-out { stop-color: var(--xj-shell-light); stop-opacity: 0; }
+
+.shell-outline {
+  stroke: var(--xj-shell-deep);
+  stroke-opacity: 0.7;
+  stroke-width: 1.6;
+}
+
+/* 上缘反光：侧视下最提质感的一笔 */
+.shell-rimlight {
+  stroke: var(--xj-shell-gloss);
+  stroke-opacity: 0.38;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+/* 噪点纹理层：矢量图最缺表面颗粒，加一层破掉塑料感 */
+.shell-grain {
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* 皱缝底下的软阴影：让甲片看起来是凸起的、有厚度 */
+.shell-groove-soft {
+  fill: none;
+  stroke: var(--xj-shell-deep);
+  stroke-opacity: 0.45;
+  stroke-width: 5;
+  filter: url(#xjSoft2);
+}
+
+.shell-mouth {
+  fill: rgb(var(--xj-ink-deep));
+  stroke: var(--xj-shell-light);
+  stroke-opacity: 0.5;
+  stroke-width: 1.8;
+}
+
+.shell-mouth-inner {
+  fill: rgb(var(--xj-ink));
+  opacity: 0.92;
+}
+
+.shell-stop-deep { stop-color: var(--xj-shell-deep); }
+.shell-stop-dark { stop-color: var(--xj-shell-dark); }
+.shell-stop-mid { stop-color: var(--xj-shell-mid); }
+.shell-stop-warm { stop-color: var(--xj-shell-warm); }
+.shell-stop-honey { stop-color: var(--xj-shell-honey); }
+.shell-stop-light { stop-color: var(--xj-shell-light); }
+.shell-stop-suture { stop-color: var(--xj-shell-suture); }
+.shell-stop-gloss { stop-color: var(--xj-shell-gloss); stop-opacity: 0.5; }
+.shell-stop-gloss-out { stop-color: var(--xj-shell-gloss); stop-opacity: 0; }
+.shell-stop-shadow { stop-color: rgb(var(--xj-ink-deep)); stop-opacity: 0.65; }
+.shell-stop-shadow-out { stop-color: rgb(var(--xj-ink-deep)); stop-opacity: 0; }
+
+/* ── 仪式舞台 ──────────────────────────────────────────────────────── */
+.ritual-stage {
+  position: relative;
+  height: 400px;
+  width: 100%;
+  /* 出钱口纵坐标。RitualStage 会按素材配置覆盖此值 */
+  --mouth-top: 176px;
+}
+
+.ritual-turtle {
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  /* 宽度由 --turtle-w 决定，换素材时组件会写入实际宽度 */
+  width: var(--turtle-w, 336px);
+  /* 用负外边距居中，**不能**用 translateX(-50%)：
+     摇晃动画的 keyframes 也写 transform，会把居中的位移整个覆盖掉。 */
+  margin-left: calc(var(--turtle-w, 336px) / -2);
+  z-index: 2;             /* 龟壳在铜钱之上，铜钱自开口"落下"才成立 */
+  pointer-events: none;
+}
+
+/* 外部素材（PNG）模式 */
+.ritual-asset {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ritual-asset-shadow {
+  filter: drop-shadow(0 18px 26px rgba(0, 0, 0, 0.55));
+}
+
+.ritual-coin-layer {
+  position: absolute;
+  left: 50%;
+  top: var(--mouth-top);   /* 对应龟壳下缘的开口位置 */
+  z-index: 1;
+}
+
+/* 正反标记：位置由出钱口推导，换素材时会跟着一起移动 */
+.ritual-face-layer {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--mouth-top) + 146px);
+  z-index: 3;
+}
+
+/* ── 摇卦进度提示 ─────────────────────────────────────────────────── */
+@keyframes ritual-pulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+.ritual-hint {
+  animation: ritual-pulse 1.6s ease-in-out infinite;
+}
+
+/* ── 六爻堆叠 ──────────────────────────────────────────────────────── */
+.yao-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+}
+
+.yao-bars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 96px;
+  flex: none;
+}
+
+.yao-bar {
+  height: 11px;
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    rgb(var(--xj-gold-bright)),
+    rgb(var(--xj-gold)) 55%,
+    rgb(var(--xj-gold-deep))
+  );
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.yao-bar-full {
+  flex: 1;
+}
+
+/* 阴爻：两段中间留缺口 */
+.yao-bar-yin {
+  flex: 1;
+}
+
+.yao-row-pending .yao-bars {
+  opacity: 0.22;
+}
+
+@keyframes yao-drop-in {
+  0%   { opacity: 0; transform: translateY(-14px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.yao-row-new {
+  animation: yao-drop-in 0.42s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+.yao-row-active .yao-bars {
+  filter: drop-shadow(0 0 10px rgb(var(--xj-gold) / 0.55));
+}
+
+/* ── 卦盘表 ────────────────────────────────────────────────────────── */
+/* 列：六神 / 六亲 / 纳甲 / 五行 / 世应 / 卦画 / 变卦 */
+.pan-grid {
+  display: grid;
+  grid-template-columns: 54px 54px 62px 40px 46px 104px 152px;
+  align-items: center;
+  gap: 4px 10px;
+  min-width: 572px;
+}
+
+.pan-head {
+  font-size: 12px;
+  color: rgb(var(--xj-paper-faint));
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(var(--xj-line));
+}
+
+.pan-cell {
+  font-size: 13px;
+  color: rgb(var(--xj-paper));
+}
+
+.pan-cell-dim {
+  color: rgb(var(--xj-paper-dim));
+}
+
+.pan-moving-mark {
+  color: rgb(var(--xj-cinnabar-text));
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .ritual-stage {
+    height: 330px;
+  }
+  .ritual-turtle {
+    /* 与 --mouth-top 的 0.8 缩放保持一致，否则铜钱会与出钱口错位 */
+    width: calc(var(--turtle-w, 336px) * 0.8);
+    margin-left: calc(var(--turtle-w, 336px) * -0.4);
+  }
+  .ritual-coin-layer {
+    /* 舞台上龟壳按比例缩小，开口位置随之等比下移 */
+    top: calc(var(--mouth-top) * 0.8);
+  }
+  .ritual-face-layer {
+    top: calc((var(--mouth-top) + 146px) * 0.8);
+  }
+  .coin {
+    width: 62px;
+    height: 62px;
+    margin: -31px 0 0 -31px;
+  }
+  .coin-char {
+    font-size: 17px;
+  }
+}

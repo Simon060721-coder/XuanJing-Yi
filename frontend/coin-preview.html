@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>铜钱配色候选（临时）</title>
+    <style>
+      /* 定格在动画结束帧：不依赖时钟，截图必然是可复现的静止态 */
+      .coin { opacity: 1 !important; transform: translate3d(var(--slot-x), 96px, 0) !important; }
+      .coin-spin { transform: rotateY(var(--end-rot)) !important; }
+      .pv-stage { zoom: 1.5; height: 190px; }
+      .pv {
+        background: #14161b;
+        border: 1px solid #26272d;
+        border-radius: 18px;
+        padding: 16px 18px 6px;
+      }
+      .pv-head { display: flex; align-items: baseline; gap: 10px; }
+      .pv-key {
+        font-family: STKaiti, KaiTi, serif;
+        font-size: 24px;
+        color: #c6a567;
+      }
+      .pv-name {
+        font-family: STKaiti, KaiTi, serif;
+        font-size: 19px;
+        color: #ece7dd;
+      }
+      .pv-desc {
+        margin: 6px 0 0;
+        font-size: 12px;
+        line-height: 1.7;
+        color: #8a857e;
+      }
+      .pv-inner { background: #0e0f12; border-radius: 12px; margin-top: 10px; }
+    </style>
+    <script type="module">
+      import React from 'react'
+      import { createRoot } from 'react-dom/client'
+      import '/src/index.css'
+      import '/src/styles/liuyao.css'
+      import Coin from '/src/components/liuyao/Coin.tsx'
+
+      const h = React.createElement
+
+      /* 每套候选只覆盖 6 个令牌；形状、光影结构完全一致，
+         所以比较的就是纯粹的配色差异。 */
+      const VARIANTS = [
+        {
+          key: 'A',
+          name: '古金 · 深赤金',
+          desc: '底色加深、明暗跨度拉大，暖调更重。最有「色泽」，与青铜龟甲同属暖金属。',
+          tokens: {
+            '--xj-coin-hi': '#F7E2AC',
+            '--xj-coin-light': '#E4C072',
+            '--xj-coin-base': '#C08F3C',
+            '--xj-coin-mid': '#8E5F20',
+            '--xj-coin-dark': '#452A0A',
+            '--xj-coin-engrave': 'rgba(46,26,4,0.92)',
+            '--xj-coin-rim': 'rgba(255,236,190,0.55)',
+          },
+        },
+        {
+          key: 'B',
+          name: '青铜 · 与龟甲同材质',
+          desc: '直接配龟甲的青铜。最统一，但明度低，在深底上不够跳。',
+          tokens: {
+            '--xj-coin-hi': '#E2D6AE',
+            '--xj-coin-light': '#BFB083',
+            '--xj-coin-base': '#8E8055',
+            '--xj-coin-mid': '#5E5436',
+            '--xj-coin-dark': '#2B2618',
+            '--xj-coin-engrave': 'rgba(26,22,10,0.92)',
+            '--xj-coin-rim': 'rgba(226,214,174,0.45)',
+          },
+        },
+        {
+          key: 'C',
+          name: '黄铜 · 明亮饱满',
+          desc: '更黄更饱和，明度最高，在深底上最跳；代价是「新」而不「古」。',
+          tokens: {
+            '--xj-coin-hi': '#FFF2C6',
+            '--xj-coin-light': '#F2D07C',
+            '--xj-coin-base': '#D4A63C',
+            '--xj-coin-mid': '#9A7420',
+            '--xj-coin-dark': '#4A3406',
+            '--xj-coin-engrave': 'rgba(58,40,4,0.9)',
+            '--xj-coin-rim': 'rgba(255,246,208,0.6)',
+          },
+        },
+        {
+          key: 'D',
+          name: '紫铜 · 赤铜',
+          desc: '偏红。与青铜龟甲对比强，但红色在「玄墨金」体系里是个外来色。',
+          tokens: {
+            '--xj-coin-hi': '#F9DCB6',
+            '--xj-coin-light': '#E2AC7A',
+            '--xj-coin-base': '#BA7440',
+            '--xj-coin-mid': '#824620',
+            '--xj-coin-dark': '#3C1C08',
+            '--xj-coin-engrave': 'rgba(48,20,4,0.92)',
+            '--xj-coin-rim': 'rgba(255,222,182,0.5)',
+          },
+        },
+      ]
+
+      const row = (v) =>
+        h('section', { className: 'pv' },
+          h('div', { className: 'pv-head' },
+            h('span', { className: 'pv-key' }, v.key),
+            h('span', { className: 'pv-name' }, v.name),
+          ),
+          h('p', { className: 'pv-desc' }, v.desc),
+          h('div', { className: 'pv-inner' },
+            h('div', {
+              className: 'ritual-stage pv-stage',
+              style: Object.assign({}, v.tokens, { '--mouth-top': '26px' }),
+            },
+              h('div', { className: 'ritual-coin-layer' },
+                ['背', '字', '背'].map((f, i) =>
+                  h(Coin, { key: i, index: i, face: f, flying: true })),
+              ),
+            ),
+          ),
+        )
+
+      createRoot(document.getElementById('root')).render(
+        h('div', {
+          style: {
+            background: 'var(--xj-ink)',
+            padding: '18px',
+            display: 'grid',
+            gap: '16px',
+            width: '560px',
+          },
+        }, VARIANTS.map(row)),
+      )
+    </script>
+  </head>
+  <body style="margin:0;background:#0E0F12">
+    <div id="root"></div>
+  </body>
+</html>

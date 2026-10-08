@@ -16,8 +16,9 @@ def create_app(config_class=Config):
     CORS(app)
     
     # 注册蓝图
-    from app.routes import divination_bp
+    from app.routes import divination_bp, liuyao_bp
     app.register_blueprint(divination_bp, url_prefix='/api/v1')
+    app.register_blueprint(liuyao_bp, url_prefix='/api/v1')
     
     # 创建数据库表
     with app.app_context():

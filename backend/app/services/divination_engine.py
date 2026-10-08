@@ -1,201 +1,277 @@
-"""占卜引擎核心模块"""
+# -*- coding: utf-8 -*-
+"""梅花易数占卜引擎
+
+以**先天八卦数**起卦：乾一、兑二、离三、震四、巽五、坎六、艮七、坤八。
+
+相对旧实现的重要修正
+--------------------
+1. **八卦编号改为先天八卦数**。旧实现用的是「1乾 2坤 3震 4巽 5兑 6坎 7艮 8离」，
+   既非先天数也非后天数，于是「余数取卦」整体错位——同一个余数取到的卦是错的。
+2. **时间起卦补上上卦**。正统为：
+
+       上卦 = (年 + 月 + 日) % 8
+       下卦 = (年 + 月 + 日 + 时) % 8
+       动爻 = (年 + 月 + 日 + 时) % 6
+
+   旧实现把 `(日 + 时) % 8` 当作「第二卦」，**上卦从未被计算**。
+3. **主卦由上下卦合成六十四卦，变卦由翻转动爻得出**。旧实现把上下卦当成
+   「主卦/变卦」两个独立八卦返回，既不符合梅花易数，也从来给不出六十四卦名。
+4. **体用按动爻所在卦判定**：动爻所在之卦为「用」，另一卦为「体」。
+   旧实现径以第一卦为体、第二卦为用，与动爻无关，是错的。
+5. 吉凶评分改为**由体用五行关系推出**，与解读文案共用同一套 relation，
+   不再出现「分数 80 却评凶」这种自相矛盾。
+
+已知偏差（不隐瞒）
+------------------
+正统时间起卦以**农历**取数：年支序数 + 农历月 + 农历日 + 时辰序数。
+本实现取 **年支序数 + 公历月 + 公历日 + 时支序数**——年支、时支由四柱干支
+得出（准确），但月、日暂用公历，因项目尚无农历换算。
+该偏差会写入 `calculation['calendar']` 并由接口一并返回。
+
+数字起卦的公式与本项目 About 页文档一致（上卦＝三数之和取余八、
+下卦＝后两数之和取余八、动爻＝三数之和取余六），无偏差。
+"""
+
 from datetime import datetime
-from typing import Tuple, List, Dict, Optional
-import math
+
+from app.services.liuyao.ganzhi import si_zhu
+from app.services.liuyao.hexagrams import by_trigrams, by_lines
+from app.services.liuyao.constants import YAO_POSITION_NAMES, ZHI_ORDER
+
 
 class DivinationEngine:
-    """占卜引擎主类"""
-    
+    """梅花易数占卜引擎"""
+
+    # 先天八卦数：乾一、兑二、离三、震四、巽五、坎六、艮七、坤八
+    TRIGRAM_INFO = {
+        '乾': {'number': 1, 'symbol': '☰', 'element': '金', 'direction': '西北'},
+        '兑': {'number': 2, 'symbol': '☱', 'element': '金', 'direction': '西'},
+        '离': {'number': 3, 'symbol': '☲', 'element': '火', 'direction': '南'},
+        '震': {'number': 4, 'symbol': '☳', 'element': '木', 'direction': '东'},
+        '巽': {'number': 5, 'symbol': '☴', 'element': '木', 'direction': '东南'},
+        '坎': {'number': 6, 'symbol': '☵', 'element': '水', 'direction': '北'},
+        '艮': {'number': 7, 'symbol': '☶', 'element': '土', 'direction': '东北'},
+        '坤': {'number': 8, 'symbol': '☷', 'element': '土', 'direction': '西南'},
+    }
+
+    # 按先天数索引，保持旧接口 `engine.HEXAGRAMS[num]['name']` 可用
     HEXAGRAMS = {
-        1: {"name": "乾", "symbol": "☰", "element": "金", "direction": "西北"},
-        2: {"name": "坤", "symbol": "☷", "element": "土", "direction": "西南"},
-        3: {"name": "震", "symbol": "☳", "element": "木", "direction": "东"},
-        4: {"name": "巽", "symbol": "☴", "element": "木", "direction": "东南"},
-        5: {"name": "兑", "symbol": "☵", "element": "金", "direction": "西"},
-        6: {"name": "坎", "symbol": "☶", "element": "水", "direction": "北"},
-        7: {"name": "艮", "symbol": "☷", "element": "土", "direction": "东北"},
-        8: {"name": "离", "symbol": "☲", "element": "火", "direction": "南"},
+        info['number']: {'name': name, **info}
+        for name, info in TRIGRAM_INFO.items()
     }
-    
-    ELEMENT_GENERATION = {
-        "金": "水",
-        "水": "木",
-        "木": "火",
-        "火": "土",
-        "土": "金"
+
+    NUMBER_TO_NAME = {info['number']: name for name, info in TRIGRAM_INFO.items()}
+
+    # 体用五行关系 → 分数。与 mapping_service 的 fortune 映射逐一对应，
+    # 保证「分数」与「评级」由同一个 relation 推出，不会互相矛盾。
+    RELATION_SCORE = {
+        'support': 80,     # 用生体，得助
+        'restrict': 72,    # 体克用，费力有成
+        'neutral': 60,     # 比和
+        'generate': 54,    # 体生用，耗泄
+        'attack': 34,      # 用克体，受制
     }
-    
-    ELEMENT_RESTRICTION = {
-        "金": "木",
-        "木": "土",
-        "土": "水",
-        "水": "火",
-        "火": "金"
+    # 体用同卦（八纯卦）的分档，对应 mapping_service 的 very_good / good / moderate
+    SAME_SCORE = {'乾': 88, '坤': 78}
+    SAME_SCORE_DEFAULT = 62
+
+    RELATION_LABELS = {
+        'support': '用生体（得助）',
+        'restrict': '体克用（费力有成）',
+        'neutral': '体用比和（平稳）',
+        'generate': '体生用（耗泄）',
+        'attack': '用克体（受制）',
+        'same': '体用同卦（专一）',
     }
-    
+
     def __init__(self):
-        """初始化占卜引擎"""
         pass
-    
-    def query_by_timestamp(self, timestamp: datetime) -> Dict:
-        """通过时间戳起卦
-        
-        Args:
-            timestamp: 查询时间
-            
-        Returns:
-            卦象信息字典
+
+    # ------------------------------------------------------------------
+    # 取卦
+    # ------------------------------------------------------------------
+    def _trigram(self, number):
+        """先天数 → 八卦信息"""
+        name = self.NUMBER_TO_NAME[(number % 8) or 8]
+        return {'name': name, **self.TRIGRAM_INFO[name]}
+
+    @staticmethod
+    def body_and_use(upper_name, lower_name, changing_line):
+        """定体用：动爻所在之卦为「用」，另一卦为「体」。"""
+        if changing_line <= 3:
+            # 动爻在下卦 → 下卦为用，上卦为体
+            return upper_name, lower_name
+        return lower_name, upper_name
+
+    def _build(self, upper_name, lower_name, changing_line, method, calculation):
+        """由上下卦与动爻组装完整结果"""
+        primary = by_trigrams(upper_name, lower_name)
+        if primary is None:
+            raise ValueError('无法由 {0}/{1} 合成六十四卦'.format(upper_name, lower_name))
+
+        lines = list(primary['lines'])
+        lines[changing_line - 1] ^= 1
+        changed = by_lines(lines)
+
+        body, use = self.body_and_use(upper_name, lower_name, changing_line)
+        upper = self.TRIGRAM_INFO[upper_name]
+        lower = self.TRIGRAM_INFO[lower_name]
+
+        return {
+            'method': method,
+            'upper': {'name': upper_name, **upper},
+            'lower': {'name': lower_name, **lower},
+            'primary_hexagram': self._brief(primary),
+            'changed_hexagram': self._brief(changed),
+            'changing_line': changing_line,
+            'body': body,          # 体卦（不动之卦）
+            'use': use,            # 用卦（动爻所在之卦）
+            # 六爻（自初爻起）：给前端画卦用，含变卦后的阴阳，避免前端再算一遍
+            'yaos': [
+                {
+                    'position': i + 1,
+                    'position_name': YAO_POSITION_NAMES[i],
+                    'is_yang': bool(primary['lines'][i]),
+                    'moving': (i + 1) == changing_line,
+                    'changed_is_yang': bool(lines[i]),
+                }
+                for i in range(6)
+            ],
+            'calculation': calculation,
+        }
+
+    @staticmethod
+    def _brief(hexagram):
+        return {
+            'name': hexagram['name'],
+            'symbols': hexagram['symbols'],
+            'upper': hexagram['upper'],
+            'lower': hexagram['lower'],
+            'palace': hexagram['palace'],
+            'palace_element': hexagram['palace_element'],
+            'stage': hexagram['stage'],
+            'shi': hexagram['shi'],
+            'ying': hexagram['ying'],
+        }
+
+    # ------------------------------------------------------------------
+    # 起卦方式
+    # ------------------------------------------------------------------
+    def query_by_timestamp(self, timestamp):
+        """时间起卦。
+
+        上卦 = (年 + 月 + 日) % 8
+        下卦 = (年 + 月 + 日 + 时) % 8
+        动爻 = (年 + 月 + 日 + 时) % 6
+
+        年取**年支序数**（子1…亥12），时取**时支序数**（子1…亥12），
+        二者由四柱干支得出；月、日暂用公历（见模块文档的偏差说明）。
         """
-        year_num = sum(int(d) for d in str(timestamp.year))
+        sz = si_zhu(timestamp)
+        year_num = ZHI_ORDER.index(sz['year']['zhi']) + 1
+        hour_num = ZHI_ORDER.index(sz['hour']['zhi']) + 1
         month_num = timestamp.month
         day_num = timestamp.day
-        hour_num = timestamp.hour
-        
-        total = year_num + month_num + day_num + hour_num
-        
-        primary_hex_num = (total % 8) or 8
-        secondary_hex_num = ((day_num + hour_num) % 8) or 8
-        changing_line = (total % 6) or 6
-        
-        return {
-            "primary_hexagram": self.HEXAGRAMS[primary_hex_num],
-            "secondary_hexagram": self.HEXAGRAMS[secondary_hex_num],
-            "changing_lines": [changing_line],
-            "calculation": {
-                "year": year_num,
-                "month": month_num,
-                "day": day_num,
-                "hour": hour_num,
-                "total": total
-            }
-        }
-    
-    def query_by_numbers(self, num1: int, num2: int, num3: int) -> Dict:
-        """通过数字起卦
-        
-        Args:
-            num1, num2, num3: 三个数字
-            
-        Returns:
-            卦象信息字典
+
+        upper_total = year_num + month_num + day_num
+        total = upper_total + hour_num
+
+        upper_number = upper_total % 8 or 8
+        lower_number = total % 8 or 8
+        changing_line = total % 6 or 6
+
+        upper_name = self.NUMBER_TO_NAME[upper_number]
+        lower_name = self.NUMBER_TO_NAME[lower_number]
+
+        return self._build(
+            upper_name, lower_name, changing_line, '时间',
+            {
+                'year_zhi': sz['year']['zhi'],
+                'year': year_num,
+                'month': month_num,
+                'day': day_num,
+                'hour_zhi': sz['hour']['zhi'],
+                'hour': hour_num,
+                'upper_total': upper_total,
+                'total': total,
+                'upper_number': upper_number,
+                'lower_number': lower_number,
+                'changing_line': changing_line,
+                'calendar': '年支与时支由四柱干支得出；月、日暂用公历（正统用农历）',
+            },
+        )
+
+    def query_by_numbers(self, num1, num2, num3):
+        """数字起卦（与 About 页文档一致）。
+
+        上卦 = 三数之和 % 8
+        下卦 = 后两数之和 % 8
+        动爻 = 三数之和 % 6
         """
         total = num1 + num2 + num3
-        
-        primary_hex_num = (total % 8) or 8
-        secondary_hex_num = ((num2 + num3) % 8) or 8
-        changing_line = (total % 6) or 6
-        
-        return {
-            "primary_hexagram": self.HEXAGRAMS[primary_hex_num],
-            "secondary_hexagram": self.HEXAGRAMS[secondary_hex_num],
-            "changing_lines": [changing_line],
-            "calculation": {
-                "num1": num1,
-                "num2": num2,
-                "num3": num3,
-                "total": total
-            }
-        }
-    
-    def analyze_elements(self, hexagram_nums: List[int]) -> Dict:
-        """分析五行平衡度
-        
-        Args:
-            hexagram_nums: 卦象编号列表
-            
-        Returns:
-            五行统计和平衡度
+        lower_total = num2 + num3
+
+        upper_number = total % 8 or 8
+        lower_number = lower_total % 8 or 8
+        changing_line = total % 6 or 6
+
+        upper_name = self.NUMBER_TO_NAME[upper_number]
+        lower_name = self.NUMBER_TO_NAME[lower_number]
+
+        return self._build(
+            upper_name, lower_name, changing_line, '数字',
+            {
+                'num1': num1, 'num2': num2, 'num3': num3,
+                'total': total,
+                'lower_total': lower_total,
+                'upper_number': upper_number,
+                'lower_number': lower_number,
+                'changing_line': changing_line,
+                'calendar': '不涉及历法',
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # 吉凶评分
+    # ------------------------------------------------------------------
+    def calculate_fortune_score(self, relation, changing_line, body, use):
+        """由体用五行关系与动爻位置定吉凶分数。
+
+        relation 必须与解读文案取自**同一个** element_relation 结果，
+        这样分数与评级不会矛盾。
         """
-        elements = {"金": 0, "木": 0, "水": 0, "火": 0, "土": 0}
-        
-        for hex_num in hexagram_nums:
-            element = self.HEXAGRAMS[hex_num]["element"]
-            elements[element] += 1
-        
-        values = list(elements.values())
-        max_val = max(values)
-        min_val = min(values)
-        total = sum(values)
-        
-        balance_score = (max_val - min_val) / total if total > 0 else 0
-        
-        if balance_score < 0.2:
-            balance_level = "完全平衡"
-        elif balance_score < 0.4:
-            balance_level = "基本平衡"
-        elif balance_score < 0.6:
-            balance_level = "需要调和"
+        if relation == 'same':
+            base = (self.SAME_SCORE.get(body, self.SAME_SCORE_DEFAULT)
+                    if body == use else self.SAME_SCORE_DEFAULT)
         else:
-            balance_level = "严重失衡"
-        
+            base = self.RELATION_SCORE[relation]
+
+        # 动爻位置：初爻主事之始，上爻主事之终，居中之爻气最盛
+        adjust = {1: -3, 2: 0, 3: 3, 4: 3, 5: 0, 6: -3}[changing_line]
+        score = max(0, min(100, base + adjust))
+
+        if score >= 85:
+            level = '吉'
+        elif score >= 70:
+            level = '平吉'
+        elif score >= 50:
+            level = '平'
+        elif score >= 30:
+            level = '平凶'
+        else:
+            level = '凶'
+
         return {
-            "elements": elements,
-            "balance_score": round(balance_score, 3),
-            "balance_level": balance_level
+            'fortune_score': round(score, 1),
+            'fortune_level': level,
+            'relation': relation,
+            'base_score': base,
+            'adjust': adjust,
         }
-    
-    def calculate_fortune_score(self, 
-                              primary_hex_num: int,
-                              secondary_hex_num: int,
-                              balance_score: float,
-                              changing_line: int) -> Dict:
-        """计算综合吉凶评分
-        
-        Args:
-            primary_hex_num: 主卦编号
-            secondary_hex_num: 变卦编号
-            balance_score: 五行平衡分数
-            changing_line: 动爻位置
-            
-        Returns:
-            吉凶评分和等级
-        """
-        base_score = 60
-        
-        if primary_hex_num in [1, 2, 6]:
-            base_score += 20
-        elif primary_hex_num in [8, 3]:
-            base_score += 15
-        else:
-            base_score += 10
-        
-        if primary_hex_num == secondary_hex_num:
-            base_score += 10
-        else:
-            primary_element = self.HEXAGRAMS[primary_hex_num]["element"]
-            secondary_element = self.HEXAGRAMS[secondary_hex_num]["element"]
-            
-            if self.ELEMENT_GENERATION.get(primary_element) == secondary_element:
-                base_score += 15
-            elif self.ELEMENT_RESTRICTION.get(primary_element) == secondary_element:
-                base_score -= 15
-        
-        if balance_score < 0.2:
-            base_score += 10
-        elif balance_score < 0.4:
-            base_score += 5
-        elif balance_score > 0.6:
-            base_score -= 15
-        
-        if changing_line <= 2:
-            base_score -= 5
-        elif changing_line >= 5:
-            base_score += 5
-        
-        final_score = max(0, min(100, base_score))
-        
-        if final_score >= 85:
-            fortune_level = "吉"
-        elif final_score >= 70:
-            fortune_level = "平吉"
-        elif final_score >= 50:
-            fortune_level = "平"
-        elif final_score >= 30:
-            fortune_level = "平凶"
-        else:
-            fortune_level = "凶"
-        
-        return {
-            "fortune_score": round(final_score, 1),
-            "fortune_level": fortune_level
-        }
+
+    # 兼容旧接口：由上下卦统计五行。新实现不再使用，保留以免外部调用报错。
+    def analyze_elements(self, hexagram_nums):
+        elements = {'金': 0, '木': 0, '水': 0, '火': 0, '土': 0}
+        for num in hexagram_nums:
+            elements[self.HEXAGRAMS[num]['element']] += 1
+        return {'elements': elements}

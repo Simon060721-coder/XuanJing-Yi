@@ -1,0 +1,194 @@
+/* ==========================================================================
+   梅花易数 · 起卦仪式
+   --------------------------------------------------------------------------
+   定调：**起卦过程静，只在成卦那一下给一次强显现。**
+   所以这里刻意不用卡片、不用块状按钮、不用满屏亮字——安静是"强"的成本。
+
+   青铜材质与六爻的龟甲同源，但渐变节点类在本文件内自带一份
+   （plate-stop-*），免得只访问 /divination 时还要去加载六爻的样式表。
+
+   配色约定（与 index.css 一致）：--xj-* 分两类
+     · 通道三元组（如 --xj-gold: 198 165 103）——必须写成 rgb(var(--xj-gold))
+     · 完整颜色（如 --xj-shell-deep: #17110A）——可直接用
+   ========================================================================== */
+
+/* ── 青铜渐变节点（自带一份，供八卦盘使用） ───────────────────────── */
+.plate-stop-deep { stop-color: var(--xj-shell-deep); }
+.plate-stop-dark { stop-color: var(--xj-shell-dark); }
+.plate-stop-mid { stop-color: var(--xj-shell-mid); }
+.plate-stop-warm { stop-color: var(--xj-shell-warm); }
+.plate-stop-honey { stop-color: var(--xj-shell-honey); }
+.plate-stop-light { stop-color: var(--xj-shell-light); }
+.plate-stop-gloss { stop-color: var(--xj-shell-gloss); stop-opacity: 0.5; }
+.plate-stop-gloss-out { stop-color: var(--xj-shell-gloss); stop-opacity: 0; }
+
+/* ── 八卦盘 ────────────────────────────────────────────────────────── */
+.bagua-wrap {
+  /* 宽度由页面外层控制，便于成卦后把盘缩小让位给卦画 */
+  width: 100%;
+  transform-origin: 50% 50%;
+  /* 静：几乎看不出在动，只看得出"活着"。60s 一圈，停住时的跳变极小 */
+  transition: opacity 0.6s ease, filter 0.6s ease;
+}
+
+@keyframes bagua-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.bagua-spin {
+  animation: bagua-rotate 60s linear infinite;
+}
+
+/* 起卦中：停转 + 轻微下沉，像盘落定 */
+.bagua-settle {
+  animation: bagua-rotate 60s linear infinite;
+  animation-play-state: paused;
+  transform: scale(0.975);
+  transition: transform 1.2s cubic-bezier(0.2, 0.6, 0.3, 1);
+}
+
+/* 成卦前那一下全暗——呼吸 */
+.bagua-dim {
+  opacity: 0.28;
+  filter: brightness(0.6);
+}
+
+.bagua-disc {
+  fill: url(#xjPlateGrad);
+  stroke: var(--xj-shell-deep);
+  stroke-width: 2;
+  stroke-opacity: 0.8;
+}
+
+.bagua-patina { fill: #5E7A52; opacity: 0.24; }
+
+.bagua-rim {
+  fill: none;
+  stroke: var(--xj-shell-deep);
+  stroke-opacity: 0.55;
+  stroke-width: 1.6;
+}
+
+/* 八卦刻符：暗槽 + 亮缘，读作"刻上去的" */
+.bagua-symbol {
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", sans-serif;
+  font-size: 27px;
+  fill: var(--xj-shell-suture);
+  stroke: var(--xj-shell-deep);
+  stroke-width: 0.7;
+  paint-order: stroke;
+  opacity: 0.85;
+  transition: opacity 0.5s ease, fill 0.5s ease;
+}
+
+.bagua-number {
+  font-family: KaiTi, STKaiti, serif;
+  font-size: 12px;
+  fill: var(--xj-shell-suture);
+  opacity: 0.62;
+}
+
+/* 被点亮的卦（上下卦） */
+.bagua-lit .bagua-symbol {
+  fill: rgb(var(--xj-gold-bright));
+  opacity: 1;
+  filter: drop-shadow(0 0 6px rgb(var(--xj-gold) / 0.8));
+}
+
+.bagua-lit .bagua-number { opacity: 0.85; }
+
+/* 太极 */
+.bagua-taiji-ring { fill: none; stroke: var(--xj-shell-deep); stroke-opacity: 0.5; stroke-width: 1.2; }
+.bagua-yin { fill: var(--xj-shell-deep); opacity: 0.92; }
+.bagua-yang-dot { fill: var(--xj-shell-deep); opacity: 0.95; }
+.bagua-yin-dot { fill: var(--xj-shell-light); opacity: 0.8; }
+
+.bagua-gloss { fill: url(#xjPlateSheen); filter: url(#xjPlateSoft); }
+.bagua-grain { opacity: 0.2; mix-blend-mode: overlay; pointer-events: none; }
+
+/* ── 取数：数字浮现 ─────────────────────────────────────────────────── */
+@keyframes num-rise {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.9); filter: blur(6px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.cast-number {
+  font-family: KaiTi, STKaiti, serif;
+  animation: num-rise 0.42s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+/* 静：提示文字，极淡 */
+.quiet-hint {
+  color: rgb(var(--xj-paper-dim));
+  letter-spacing: 0.08em;
+  transition: opacity 0.5s ease;
+}
+
+/* ── 起卦结果里的卦画 ───────────────────────────────────────────────── */
+
+/* 报数时盘轻震一下。必须放在**外层包裹元素**上：内层的 .bagua-wrap
+   正在自转（也在动 transform），两个动画放同一元素会互相覆盖。 */
+@keyframes plate-shake {
+  0%, 100% { transform: translate(0, 0); }
+  30%      { transform: translate(-2px, 1px); }
+  65%      { transform: translate(2px, -1px); }
+}
+
+.plate-shake { animation: plate-shake 0.24s ease-out; }
+
+/* ── 卦画（六爻，自下而上） ─────────────────────────────────────────── */
+@keyframes hex-line-in {
+  0%   { opacity: 0; transform: scaleX(0.4); filter: brightness(2.4); }
+  60%  { opacity: 1; transform: scaleX(1); filter: brightness(1.6); }
+  100% { opacity: 1; transform: scaleX(1); filter: brightness(1); }
+}
+
+@keyframes hex-flip {
+  0%   { filter: brightness(3); }
+  40%  { filter: brightness(3); }
+  100% { filter: brightness(1); }
+}
+
+@keyframes hex-separate {
+  0%   { opacity: 0; transform: translateX(-14px); filter: blur(5px); }
+  100% { opacity: 1; transform: translateX(0); filter: blur(0); }
+}
+
+.hex-line-in { animation: hex-line-in 0.4s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.hex-flip { animation: hex-flip 0.56s ease-out both; }
+.hex-separate { animation: hex-separate 0.62s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+
+.hex-line {
+  height: 10px;
+  border-radius: 2px;
+  transition: background 0.4s ease;
+}
+
+/* 体卦：暖金（主）；用卦：青（客）；动爻另有朱砂标记 */
+.hex-line-body { background: linear-gradient(180deg, rgb(var(--xj-gold-bright)), rgb(var(--xj-gold)) 60%, rgb(var(--xj-gold-deep))); }
+.hex-line-use { background: linear-gradient(180deg, rgb(var(--xj-jade-bright)), rgb(var(--xj-jade)) 60%, rgb(var(--xj-jade) / 0.6)); }
+.hex-line-changed { background: linear-gradient(180deg, rgb(var(--xj-paper-dim)), rgb(var(--xj-paper-faint))); opacity: 0.75; }
+.hex-line-pending { background: rgb(var(--xj-paper) / 0.1); }
+
+/* 动爻：朱砂，并在成卦时炸一下 */
+.hex-moving-mark {
+  color: rgb(var(--xj-cinnabar-text));
+  font-weight: 600;
+}
+
+/* ── 体用生克箭头 ───────────────────────────────────────────────────── */
+@keyframes arrow-draw {
+  0%   { opacity: 0; letter-spacing: 0.6em; }
+  100% { opacity: 1; letter-spacing: 0.12em; }
+}
+
+.tiyong-arrow { animation: arrow-draw 0.6s ease-out both; }
+
+/* ── 解读：最后才淡入，且比卦象暗 ───────────────────────────────────── */
+@keyframes reveal-in {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.reveal-in { animation: reveal-in 0.7s ease-out both; }
