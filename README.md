@@ -192,7 +192,9 @@ py -c "from app.services.liuyao.selftest import main; raise SystemExit(main())"
   而依据清单不变。六爻结果页与关于页均标注了这一点，**请以依据为准**。
 - **无用户系统与鉴权**：`config.py` 中的 JWT 配置为预留，尚未接线，请勿直接暴露到公网。
 - **Redis 缓存配置为预留**，未接线（未引入 Flask-Caching），当前所有计算都是实时完成的。
-- **六爻的断卦结果尚未落库**：历史记录目前只保存梅花易数的起卦。
+- **历史记录覆盖六爻与梅花易数**：`/liuyao/paipan` 装卦即落库，历史页面可查看
+  六爻（铜钱摇卦）与梅花易数（时间／数字）两类记录；六爻历史仅保存单次装卦结果，
+  支持删除与清空。
 - **Docker 编排**：`docker-compose.yml` 与 `Dockerfile.backend`／`Dockerfile.frontend` 均已就绪，
   本机未安装 Docker 尚未实测容器构建，请以本地开发方式运行为准。
 - **龟壳素材为 AI 生成图**：作者持有生成记录，但为避免 MIT 分发下的使用条款争议，将其列为待确认素材，
@@ -203,7 +205,6 @@ py -c "from app.services.liuyao.selftest import main; raise SystemExit(main())"
 ## Roadmap
 
 - **农历换算**：时间起卦由公历月日取数修正为农历月日取数，修复「已知边界」中标注的偏差。
-- **六爻断卦结果落库**：历史记录扩展为覆盖六爻完整排盘与断卦，与梅花易数对齐。
 - **更多术数体系**：在六爻、梅花易数之外扩展更多传统术数的可复算实现。
 - **多语言**：已提供简繁切换；后续按需扩展更多语言界面与释义。
 - **社区建设**：以贡献指南（`docs/CONTRIBUTING.md`）为基础开放 issue 规范、示例卦例库与算法讨论。欢迎通过 GitHub 提交 issue / PR 参与。

@@ -276,7 +276,11 @@ function HistoryPage() {
 
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="text-xs text-xuanjing-paper-dim">
-                        {t(item.input_method === '时间' ? '按时间' : '按数字')} · {formatTime(item.query_timestamp)}
+                        {item.input_method === '时间'
+                          ? t('按时间')
+                          : item.input_method === '数字'
+                            ? t('按数字')
+                            : t('铜钱摇卦')} · {formatTime(item.query_timestamp)}
                       </div>
                       <button
                         onClick={(e) => deleteRecord(item.id, e)}

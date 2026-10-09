@@ -9,8 +9,9 @@
    演到这个结果上。避免「先有动画再随机」——那样结果可被前端预测。
 3. **时间语义**：`moment` 视为**当地时间**（用户所在时区的墙上时间），四柱按
    此刻推算。真太阳时校正属后续增强，目前不做。
-4. **暂不落库**：解读规则引擎（用神旺衰）尚未完成，现在写库只会存下半截记录
-   （有卦无断），留下需要回填的历史数据。待解读层完成后统一落库。
+4. **装卦即落库**：`/liuyao/paipan` 成功后，把本卦、变卦、动爻、解读与完整卦盘
+   一并写入 `DivinationQuery` 表（query_type='liuyao'），与梅花易数记录共用
+   历史接口与历史页面；落库失败不影响装卦返回。
 """
 
 import traceback
@@ -18,7 +19,9 @@ from datetime import datetime
 
 from flask import request, jsonify
 
+from app import db
 from app.routes import liuyao_bp
+from app.models.hexagram import DivinationQuery
 from app.services.liuyao import (
     HEXAGRAMS, PALACE_ORDER, YAO_POSITION_NAMES, YAO_LABELS, YAO_NAMES,
     TOPIC_YONGSHEN, TOPIC_LABELS,
@@ -169,6 +172,35 @@ def liuyao_paipan():
         pan['question'] = (data.get('question') or '').strip()[:200]
         pan['topic'] = topic
         pan['gender'] = gender
+
+        # ── 落库：纳入历史记录，与梅花易数共用历史接口 ──────────────
+        # 失败不回滚装卦结果：写库只是附属功能。
+        try:
+            analysis = pan['analysis']
+            record = DivinationQuery(
+                query_type='liuyao',
+                input_method='铜钱',
+                input_value=(data.get('question') or '').strip()[:200],
+                primary_hexagram=pan['ben']['name'],
+                secondary_hexagram=(pan.get('bian') or {}).get('name'),
+                changing_lines=','.join(str(n) for n in pan.get('moving_lines', [])),
+                fortune_score=analysis.get('score'),
+                fortune_level=analysis.get('level'),
+                analysis_result={
+                    'advice_layer': {
+                        'fortune_label': analysis.get('level'),
+                        'main_interpretation': analysis.get('summary'),
+                        'keywords': analysis.get('keywords', []),
+                    },
+                    'liuyao': analysis,
+                },
+                query_timestamp=moment,
+            )
+            db.session.add(record)
+            db.session.commit()
+            pan['record_id'] = record.id
+        except Exception as exc:                       # pragma: no cover
+            traceback.print_exc()
 
         return _ok(pan)
     except Exception as exc:                       # pragma: no cover
