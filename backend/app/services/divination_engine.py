@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""梅花易数占卜引擎
+"""梅花易数起卦引擎
 
 以**先天八卦数**起卦：乾一、兑二、离三、震四、巽五、坎六、艮七、坤八。
 
@@ -40,7 +40,7 @@ from app.services.liuyao.constants import YAO_POSITION_NAMES, ZHI_ORDER
 
 
 class DivinationEngine:
-    """梅花易数占卜引擎"""
+    """梅花易数起卦引擎"""
 
     # 先天八卦数：乾一、兑二、离三、震四、巽五、坎六、艮七、坤八
     TRIGRAM_INFO = {

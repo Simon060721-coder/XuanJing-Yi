@@ -28,8 +28,6 @@ PIPFILE.lock
 
 # Node
 node_modules/
-package-lock.json
-yarn.lock
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -60,6 +58,11 @@ build/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# 本地构建缓存：pip 会在项目根创建 _tmp/（build tracker、wheel cache 等）。
+# 实测它可能因权限问题被 git 静默跳过（不报错也不出现在 status 里），
+# 但换台机器、或换个工具执行 git add . 时就会成批提交进来，故显式忽略。
+_tmp/
 
 # OS
 Thumbs.db

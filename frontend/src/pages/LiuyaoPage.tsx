@@ -15,6 +15,7 @@ import type {
   LiuyaoPan, SiZhu, TopicInfo, TossResult, Trigram, YaoValue,
 } from '../types/liuyao'
 import '../styles/liuyao.css'
+import { useLanguage } from '../i18n'
 
 /* 与 styles/liuyao.css 中 coin-journey / shell-shake 的时长对应，改一处要同步另一处 */
 const SHAKE_MS = 720      // 龟壳摇晃
@@ -29,6 +30,7 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 type Gender = '男' | '女'
 
 export default function LiuyaoPage() {
+  const { t } = useLanguage()
   const [sizhu, setSizhu] = useState<SiZhu | null>(null)
   const [topics, setTopics] = useState<TopicInfo[]>([])
   /** 八卦表，由后端提供；「卦象成形」据此把三爻阴阳位映射成卦名 */
@@ -122,7 +124,7 @@ export default function LiuyaoPage() {
         await submit(next.map((y) => y.value) as YaoValue[], moment)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '摇卦失败，请稍后重试。')
+      setError(err instanceof Error ? err.message : t('摇卦失败，请稍后重试。'))
       setPhase('idle')
       setCurrent(null)
     } finally {
@@ -143,7 +145,7 @@ export default function LiuyaoPage() {
       setCurrent(null)
       await submit(six.yao_values, moment)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '起卦失败，请稍后重试。')
+      setError(err instanceof Error ? err.message : t('起卦失败，请稍后重试。'))
     } finally {
       setBusy(false)
     }
@@ -160,7 +162,7 @@ export default function LiuyaoPage() {
     try {
       setPan(await liuyaoApi.paipan(values, momentRef.current, question, nextTopic, nextGender))
     } catch (err) {
-      setError(err instanceof Error ? err.message : '重新解读失败。')
+      setError(err instanceof Error ? err.message : t('重新解读失败。'))
     } finally {
       setBusy(false)
     }
@@ -180,10 +182,10 @@ export default function LiuyaoPage() {
   const done = yaos.length >= 6
   const activePosition = busy && phase !== 'idle' ? yaos.length + 1 : null
   const kongWang = (sizhu?.kong_wang ?? []).join('')
-  const currentTopic = topics.find((t) => t.key === topic)
+  const currentTopic = topics.find((item) => item.key === topic)
 
   return (
-    <PageShell title="六爻摇卦" subtitle="三枚铜钱，六次摇掷，自初爻而上装卦">
+    <PageShell title={t('六爻摇卦')} subtitle={t('三枚铜钱，六次摇掷，自初爻而上装卦')}>
       {/* 四柱条 */}
       <div className="mb-8">
         <div className="glass-panel flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border border-xuanjing-line px-5 py-3 text-xs">
@@ -194,17 +196,17 @@ export default function LiuyaoPage() {
                 {sizhu.hour.gan_zhi}时
               </span>
               <span className="text-xuanjing-paper-dim">
-                月建 <span className="text-xuanjing-gold">{sizhu.month_branch}</span>
+                {t('月建')} <span className="text-xuanjing-gold">{sizhu.month_branch}</span>
               </span>
               <span className="text-xuanjing-paper-dim">
-                日建 <span className="text-xuanjing-gold">{sizhu.day_branch}</span>
+                {t('日建')} <span className="text-xuanjing-gold">{sizhu.day_branch}</span>
               </span>
               <span className="text-xuanjing-paper-dim">
-                旬空 <span className="text-xuanjing-cinnabar-text">{kongWang}</span>
+                {t('旬空')} <span className="text-xuanjing-cinnabar-text">{kongWang}</span>
               </span>
             </>
           ) : (
-            <span className="text-xuanjing-paper-faint">正在取当前四柱…</span>
+            <span className="text-xuanjing-paper-faint">{t('正在取当前四柱…')}</span>
           )}
         </div>
       </div>
@@ -223,28 +225,28 @@ export default function LiuyaoPage() {
             <div className="mt-2 min-h-[3.5rem] text-center text-sm">
               {phase === 'idle' && !done && (
                 <span className="text-xuanjing-paper-dim">
-                  按下方按钮摇出第 {yaos.length + 1} 爻
+                  {t(`按下方按钮摇出第 ${yaos.length + 1} 爻`)}
                 </span>
               )}
               {phase === 'shaking' && (
-                <span className="ritual-hint text-xuanjing-gold">龟壳摇动中…</span>
+                <span className="ritual-hint text-xuanjing-gold">{t('龟壳摇动中…')}</span>
               )}
               {phase === 'flying' && (
-                <span className="ritual-hint text-xuanjing-gold">铜钱旋转，将依次停定…</span>
+                <span className="ritual-hint text-xuanjing-gold">{t('铜钱旋转，将依次停定…')}</span>
               )}
               {phase === 'settled' && current && (
                 <div>
                   <div className="font-heading text-lg text-xuanjing-gold">
-                    {current.position_name}爻　{current.label}
+                    {t(current.position_name)}爻　{t(current.label)}
                     {current.moving && (
                       <span className="ml-2 text-xuanjing-cinnabar-text">
-                        {current.value === 9 ? '○' : '×'} 动爻
+                        {current.value === 9 ? '○' : '×'} {t('动爻')}
                       </span>
                     )}
                   </div>
                   <div className="mt-1 text-xs text-xuanjing-paper-faint">
-                    {current.coins.join('　')}　→　{current.name}
-                    {!done && '　·　看清后点下方按钮摇下一爻'}
+                    {t(`${current.coins.join('　')}　→　${current.name}`)}
+                    {!done && `　·　${t('看清后点下方按钮摇下一爻')}`}
                   </div>
                 </div>
               )}
@@ -254,25 +256,25 @@ export default function LiuyaoPage() {
               {/* 问事类别：决定用神 */}
               {topics.length > 0 && (
                 <div>
-                  <div className="mb-2 text-xs text-xuanjing-paper-faint">所问何事（决定用神）</div>
+                  <div className="mb-2 text-xs text-xuanjing-paper-faint">{t('所问何事（决定用神）')}</div>
                   <div className="flex flex-wrap gap-2">
-                    {topics.map((t) => (
+                    {topics.map((item) => (
                       <button
-                        key={t.key}
+                        key={item.key}
                         type="button"
-                        onClick={() => reanalyze(t.key, gender)}
+                        onClick={() => reanalyze(item.key, gender)}
                         disabled={busy}
-                        title={`用神：${t.yong_shen}`}
-                        className={`${CHIP} ${topic === t.key ? CHIP_ON : CHIP_OFF}`}
+                        title={t(`用神：${item.yong_shen}`)}
+                        className={`${CHIP} ${topic === item.key ? CHIP_ON : CHIP_OFF}`}
                       >
-                        {t.label}
+                        {t(item.label)}
                       </button>
                     ))}
                   </div>
                   {currentTopic && (
                     <p className="mt-2 text-[11px] text-xuanjing-paper-faint">
-                      用神：{currentTopic.yong_shen}
-                      {pan ? '　（换类别会立即重新解读，不必重新起卦）' : ''}
+                      {t('用神')}：{t(currentTopic.yong_shen)}
+                      {pan ? `　${t('（换类别会立即重新解读，不必重新起卦）')}` : ''}
                     </p>
                   )}
                 </div>
@@ -281,7 +283,7 @@ export default function LiuyaoPage() {
               {/* 感情类依性别取用神 */}
               {topic === 'relationship' && (
                 <div className="flex flex-wrap items-center gap-3 text-xs">
-                  <span className="text-xuanjing-paper-faint">占者</span>
+                  <span className="text-xuanjing-paper-faint">{t('占者')}</span>
                   {(['男', '女'] as Gender[]).map((g) => (
                     <button
                       key={g}
@@ -293,7 +295,7 @@ export default function LiuyaoPage() {
                       {g}
                     </button>
                   ))}
-                  <span className="text-xuanjing-paper-faint">男占妻财、女占官鬼</span>
+                  <span className="text-xuanjing-paper-faint">{t('男占妻财、女占官鬼')}</span>
                 </div>
               )}
 
@@ -303,7 +305,7 @@ export default function LiuyaoPage() {
                 onChange={(e) => setQuestion(e.target.value)}
                 maxLength={50}
                 disabled={yaos.length > 0 || busy}
-                placeholder="心中所问（选填），如：近期事业运势如何？"
+                placeholder={t('心中所问（选填），如：近期事业运势如何？')}
                 className={FIELD}
               />
 
@@ -314,7 +316,7 @@ export default function LiuyaoPage() {
                   disabled={busy || done}
                   className={`min-w-[180px] flex-1 ${BTN_PRIMARY}`}
                 >
-                  {busy ? '摇卦中…' : done ? '六爻已足' : `摇第 ${yaos.length + 1} 爻`}
+                  {busy ? t('摇卦中…') : done ? t('六爻已足') : t(`摇第 ${yaos.length + 1} 爻`)}
                 </button>
                 <button
                   type="button"
@@ -322,7 +324,7 @@ export default function LiuyaoPage() {
                   disabled={busy || done}
                   className={BTN_SECONDARY}
                 >
-                  跳过动画，直接起卦
+                  {t('跳过动画，直接起卦')}
                 </button>
                 {(yaos.length > 0 || pan) && (
                   <button
@@ -331,7 +333,7 @@ export default function LiuyaoPage() {
                     disabled={busy}
                     className={BTN_GHOST}
                   >
-                    重新起卦
+                    {t('重新起卦')}
                   </button>
                 )}
               </div>
@@ -345,7 +347,7 @@ export default function LiuyaoPage() {
           {/* 右栏：六爻堆叠 + 卦象成形 */}
           <div className="space-y-5">
             <div className="glass-card h-fit rounded-3xl border border-xuanjing-line p-6">
-              <h2 className="mb-4 font-heading text-lg font-semibold text-xuanjing-gold">六爻</h2>
+              <h2 className="mb-4 font-heading text-lg font-semibold text-xuanjing-gold">{t('六爻')}</h2>
               <YaoStack yaos={yaos} activePosition={activePosition} panReady={pan != null} />
             </div>
             <HexagramProgress yaos={yaos} trigrams={trigrams} pan={pan} />

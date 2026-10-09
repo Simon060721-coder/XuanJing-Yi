@@ -1,4 +1,4 @@
-"""占卜相关路由"""
+"""起卦相关路由"""
 from flask import request, jsonify
 from datetime import datetime
 from app.routes import divination_bp
@@ -12,7 +12,7 @@ mapping_service = MappingService()
 
 @divination_bp.route('/divination/query', methods=['POST'])
 def query_divination():
-    """占卜查询API（梅花易数）
+    """起卦查询API（梅花易数）
 
     返回的是**真正的六十四卦**（主卦／变卦），而不是两个独立的八卦。
     体卦、用卦按动爻所在卦判定。
@@ -193,7 +193,7 @@ def health_check():
 
 @divination_bp.route('/divination/history', methods=['GET'])
 def get_divination_history():
-    """获取占卜历史记录
+    """获取起卦历史记录
 
     Query Params:
         limit: 返回记录数量（默认 20，最大 100）
@@ -259,7 +259,7 @@ def get_divination_history():
 
 @divination_bp.route('/divination/history/<int:record_id>', methods=['GET'])
 def get_divination_detail(record_id):
-    """获取单条占卜记录的完整解读详情"""
+    """获取单条起卦记录的完整解读详情"""
     try:
         record = DivinationQuery.query.get(record_id)
         if not record:
@@ -286,7 +286,7 @@ def get_divination_detail(record_id):
 
 @divination_bp.route('/divination/history/<int:record_id>', methods=['DELETE'])
 def delete_divination_record(record_id):
-    """删除单条占卜记录"""
+    """删除单条起卦记录"""
     try:
         record = DivinationQuery.query.get(record_id)
         if not record:
@@ -302,7 +302,7 @@ def delete_divination_record(record_id):
 
 @divination_bp.route('/divination/history', methods=['DELETE'])
 def clear_divination_history():
-    """清空**全部**占卜记录（历史页的「清空历史」）。
+    """清空**全部**起卦记录（历史页的「清空历史」）。
 
     与单条删除同一个资源路径，靠 HTTP 方法 + 有无 id 区分：
     DELETE /divination/history        → 清空全部

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 import PageShell from '../components/PageShell'
 import { BTN_PRIMARY, BTN_OUTLINE, BTN_DANGER } from '../styles/ui'
+import { useLanguage } from '../i18n'
 
 interface HistoryItem {
   id: number
@@ -32,6 +33,7 @@ function fortuneTone(level: string): { text: string; bg: string } {
 }
 
 function HistoryPage() {
+  const { t } = useLanguage()
   const [items, setItems] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -54,7 +56,7 @@ function HistoryPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data?.error || '加载历史记录失败')
+        setError(data?.error || t('加载历史记录失败'))
         return
       }
 
@@ -70,7 +72,7 @@ function HistoryPage() {
       setHasMore(data.data.has_more)
     } catch (err) {
       console.error(err)
-      setError('网络请求失败，请检查后端服务是否已启动')
+      setError(t('网络请求失败，请检查后端服务是否已启动'))
     } finally {
       setLoading(false)
     }
@@ -104,7 +106,7 @@ function HistoryPage() {
 
   const deleteRecord = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!window.confirm('确定删除这条占卜记录？')) return
+    if (!window.confirm(t('确定删除这条起卦记录？'))) return
     try {
       const response = await fetch(`/api/v1/divination/history/${id}`, { method: 'DELETE' })
       if (response.ok) {
@@ -125,14 +127,14 @@ function HistoryPage() {
    * 删除范围是**全部**记录，不受当前分页影响（后端按整表删）。
    */
   const clearHistory = async () => {
-    if (!window.confirm(`确定删除全部 ${total} 条占卜记录？\n\n此操作不可恢复。`)) return
+    if (!window.confirm(t(`确定删除全部 ${total} 条起卦记录？\n\n此操作不可恢复。`))) return
 
     setClearing(true)
     try {
       const response = await fetch('/api/v1/divination/history', { method: 'DELETE' })
       const data = await response.json().catch(() => null)
       if (!response.ok) {
-        setError(data?.error || '清空历史失败')
+        setError(data?.error || t('清空历史失败'))
         return
       }
       setItems([])
@@ -144,7 +146,7 @@ function HistoryPage() {
       setError(null)
     } catch (err) {
       console.error(err)
-      setError('网络请求失败，请检查后端服务是否已启动')
+      setError(t('网络请求失败，请检查后端服务是否已启动'))
     } finally {
       setClearing(false)
     }
@@ -159,15 +161,15 @@ function HistoryPage() {
     const hours = Math.floor(diff / 3600000)
     const days = Math.floor(diff / 86400000)
 
-    if (minutes < 1) return '刚刚'
-    if (minutes < 60) return `${minutes} 分钟前`
-    if (hours < 24) return `${hours} 小时前`
-    if (days < 7) return `${days} 天前`
+    if (minutes < 1) return t('刚刚')
+    if (minutes < 60) return t(`${minutes} 分钟前`)
+    if (hours < 24) return t(`${hours} 小时前`)
+    if (days < 7) return t(`${days} 天前`)
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   }
 
   return (
-    <PageShell title="占卜历史" subtitle="回顾往昔卦象，审视心路历程">
+    <PageShell title={t('起卦历史')} subtitle={t('回顾往昔卦象，审视心路历程')}>
       {/* 统计信息 */}
       <div className="mb-8">
         <motion.div
@@ -177,14 +179,14 @@ function HistoryPage() {
           className="flex flex-wrap items-center justify-between gap-3"
         >
           <div className="text-sm text-xuanjing-paper-dim">
-            共 <span className="font-bold text-xuanjing-gold">{total}</span> 条占卜记录
+            {t('共')} <span className="font-bold text-xuanjing-gold">{total}</span> {t('条起卦记录')}
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Link
               to="/divination"
               className={BTN_PRIMARY}
             >
-              + 再起一卦
+              {t('+ 再起一卦')}
             </Link>
             {total > 0 && (
               <button
@@ -193,7 +195,7 @@ function HistoryPage() {
                 disabled={clearing}
                 className={BTN_DANGER}
               >
-                {clearing ? '清空中…' : '清空历史'}
+                {clearing ? t('清空中…') : t('清空历史')}
               </button>
             )}
           </div>
@@ -209,7 +211,7 @@ function HistoryPage() {
               onClick={() => fetchHistory(true)}
               className="mt-3 text-sm text-xuanjing-cinnabar-text underline"
             >
-              重试
+              {t('重试')}
             </button>
           </div>
         </div>
@@ -219,7 +221,7 @@ function HistoryPage() {
       <div className="space-y-4">
         {loading && items.length === 0 ? (
           <div className="py-20 text-center text-xuanjing-paper-dim">
-            加载中...
+            {t('加载中...')}
           </div>
         ) : items.length === 0 && !error ? (
           <motion.div
@@ -228,12 +230,12 @@ function HistoryPage() {
             className="py-20 text-center"
           >
             <div className="mb-4 font-heading text-6xl text-xuanjing-gold/25">卦</div>
-            <p className="mb-6 text-xuanjing-paper-dim">尚无占卜记录</p>
+            <p className="mb-6 text-xuanjing-paper-dim">{t('尚无起卦记录')}</p>
             <Link
               to="/divination"
               className={`inline-block ${BTN_PRIMARY}`}
             >
-              开始第一次占卜
+              {t('开始第一次起卦')}
             </Link>
           </motion.div>
         ) : (
@@ -256,31 +258,31 @@ function HistoryPage() {
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex flex-wrap items-center gap-3">
                         <div className="font-heading text-2xl font-bold text-xuanjing-paper">
-                          {item.primary_display || item.primary_hexagram}
+                          {t(item.primary_display || item.primary_hexagram)}
                         </div>
                         <span className="text-xuanjing-gold">→</span>
                         <div className="font-heading text-2xl font-bold text-xuanjing-paper">
-                          {item.secondary_display || item.secondary_hexagram}
+                          {t(item.secondary_display || item.secondary_hexagram)}
                         </div>
                       </div>
                       <div className={`rounded-full px-3 py-1 text-xs font-semibold ${tone.text} ${tone.bg}`}>
-                        {item.fortune_label || item.fortune_level} · {item.fortune_score}
+                        {t(item.fortune_label || item.fortune_level)} · {item.fortune_score}
                       </div>
                     </div>
 
                     <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-xuanjing-paper-dim">
-                      {item.main_interpretation}
+                      {t(item.main_interpretation)}
                     </p>
 
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="text-xs text-xuanjing-paper-dim">
-                        {item.input_method === '时间' ? '按时间' : '按数字'} · {formatTime(item.query_timestamp)}
+                        {t(item.input_method === '时间' ? '按时间' : '按数字')} · {formatTime(item.query_timestamp)}
                       </div>
                       <button
                         onClick={(e) => deleteRecord(item.id, e)}
                         className="text-xs text-xuanjing-paper-dim transition-colors duration-200 hover:text-xuanjing-cinnabar-text"
                       >
-                        删除
+                        {t('删除')}
                       </button>
                     </div>
                   </div>
@@ -298,7 +300,7 @@ function HistoryPage() {
                         <div className="p-5">
                           {detailLoading ? (
                             <div className="py-4 text-center text-sm text-xuanjing-paper-dim">
-                              加载详情中...
+                              {t('加载详情中...')}
                             </div>
                           ) : detail ? (
                             <div className="space-y-4">
@@ -309,14 +311,14 @@ function HistoryPage() {
                                       key={i}
                                       className="rounded-full bg-xuanjing-gold/15 px-3 py-1 text-xs text-xuanjing-paper"
                                     >
-                                      {kw}
+                                      {t(kw)}
                                     </span>
                                   ))}
                                 </div>
                               )}
 
                               <div className="pt-2 text-center text-xs text-xuanjing-paper-dim">
-                                点击卡片收起详情
+                                {t('点击卡片收起详情')}
                               </div>
                             </div>
                           ) : null}
@@ -336,7 +338,7 @@ function HistoryPage() {
                   disabled={loading}
                   className={BTN_OUTLINE}
                 >
-                  {loading ? '加载中...' : '加载更多'}
+                  {loading ? t('加载中...') : t('加载更多')}
                 </button>
               </div>
             )}

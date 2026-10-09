@@ -1,219 +1,217 @@
-## 项目简介
+# 玄镜易 · XuanJing Yi
 
-玄镜易是一套自用易学占断系统，内置**纳甲筮法（六爻）**与**梅花易数**两套完整排盘、断卦引擎，搭配青铜质感古风界面。支持龟壳摇钱成卦、八卦盘取数起卦；每一步占断逻辑均可溯源传统术数典籍依据。
+**把易学占断写成可复算的算法，而不是随机数生成器。**
 
-本项目区别于市面上 “随机生成卦象 + 套用模板文案” 的工具：完整还原两套术数底层规则，界面不只是装饰，更是算法规则的可视化展示 —— 你可以直观看到为何此爻为动爻、此卦为体卦，所有判定节点均可追溯。
+六爻（纳甲筮法）与梅花易数两套完整的排盘、断卦引擎，配一套以青铜质感为主的古风界面：
+龟壳摇钱成卦、八卦盘取数起卦，每一步判断都能追溯到经典依据。
 
-### 功能总览
+![五页总览](docs/images/overview.png)
 
-#### ✦ 六爻（纳甲筮法）
+---
 
-- 起卦仪式：龟壳震动动画，三枚铜钱旋落，六轮成卦；支持跳过动画直接起卦
-- 装卦逻辑：本卦、变卦、宫位、世应、纳甲、六亲、六神、伏神、旬空、进退、六冲六合完整实现
-- 断卦引擎：根据所占事项选取用神（占感情可按性别区分妻财 / 官鬼），依托月建、日建判定五行旺衰；逐条输出判定依据与权重，汇总吉凶档位
-- 知识库：六十四卦、八卦、四柱干支、二十四节气，支持独立查询
+## 这是什么
 
-#### ✦ 梅花易数
+一个开源的易学文化数字化项目。它不满足于"随机出一个卦、再套一段模板文案"，而是把两套术数
+的**规则**真正实现出来：
 
-- 时间起卦：取当下时间起卦，以年支 + 月 + 日定上卦，叠加时支定下卦，遵循古法 “取当下” 的起卦逻辑
-- 数字起卦：默认点击八卦盘取数，也支持手动自定义报数起卦
-- 成卦动效：八卦盘卦象点亮 → 六爻依次渲染 → 动爻翻转 → 变卦剥离，区分体卦用卦，标注五行生克方向
-- 节奏设计：起卦阶段画面静谧低动效，成卦瞬间强动态反馈，形成仪式感
+- 六爻：干支四柱、节气定月建、纳甲、六亲、世应、六神、伏神、旬空、进退、六冲六合，
+  再到取用神与旺衰判定；
+- 梅花易数：时间起卦与数字起卦、体用五行生克、动爻翻转变卦。
 
-#### ✦ 历史与附加功能
+> **用途声明**：本项目为易学文化研究与算法演示而开发，排盘与断卦结果源自传统规则的
+> 推演，仅供参考与学习，不构成任何现实决策建议，亦不提供商业占卜服务。
 
-- 占卜记录：列表查看历史卦例，支持单条详情查看、单独删除、一键清空全部记录
-- 关于页面：记录起卦规则、解读逻辑构成，如实标注当前实现存在的偏差
+界面不是装饰，而是这些规则的**可视化**：为什么这一爻是"动爻"、为什么这卦是"体"，
+在页面上都指得出来。
+
+| 首页 | 六爻摇卦 |
+| --- | --- |
+| ![首页](docs/images/home.png) | ![六爻](docs/images/liuyao.png) |
+
+| 梅花易数 · 静（待命） | 梅花易数 · 强（成卦） |
+| --- | --- |
+| ![梅花易数](docs/images/meihua.png) | ![成卦](docs/images/meihua-cast.png) |
+
+---
+
+## 功能
+
+### 六爻（纳甲筮法）
+
+- **摇卦仪式**：龟壳震动、三枚铜钱飞旋后逐一落定，六轮成卦（可跳过动画直接起卦）
+- **装卦**：本卦／变卦、宫位、世应、纳甲、六亲、六神、伏神、旬空
+- **断卦**：按所问之事取用神（问感情时依性别分取妻财／官鬼），依月建日建判旺衰，
+  逐条给出判断依据与权重，汇总为吉凶分档
+- 六十四卦、八卦、四柱、节气均可单独查询
+
+### 梅花易数
+
+- **以时起卦**：取此刻之数（年支＋月＋日为上卦，再加时支为下卦），正统即"取当下"
+- **以数起卦**：默认**点盘三下**，数取自点击那一刻；也可自己报数
+- **成卦动效**：八卦盘上的上下卦亮起 → 六爻逐根浮现 → 动爻翻转 → 变卦剥离 → 体用分色与生克方向
+- 界面刻意分两段节奏：起卦**静**（几乎不动），成卦那一下**强**（连续的动作）
+
+### 历史与其它
+
+- 起卦记录列表、展开详情、单条删除、**一键清空**
+- 关于页记录起卦方法与解读的构成（含如实标注的偏差）
+- **简繁语言切换**：页面右上角一键切换简体／繁体中文
+
+---
 
 ## 技术栈
 
-表格
-
-| 分层 | 选型 |
+| 层 | 选型 |
 | --- | --- |
 | 后端 | Python 3.9+、Flask 2.3、SQLAlchemy 2.0、Flask-SQLAlchemy、Flask-CORS |
-| 数据库 | SQLite（默认） / PostgreSQL（修改 DATABASE_URL 即可切换） |
+| 数据库 | SQLite（默认）／PostgreSQL（改 `DATABASE_URL` 即可） |
 | 前端 | React 18、TypeScript 5.6、Vite 5、Tailwind CSS 3.4、Framer Motion 10 |
-| 样式规范 | CSS 变量令牌 + Tailwind；不依赖外部字体、CDN 资源，可完全离线运行 |
+| 样式 | 纯 CSS 变量令牌 + Tailwind，**不依赖任何外网字体或 CDN，可完全离线运行** |
+
+---
 
 ## 快速开始
 
-环境前置要求：`Python 3.9+` 与 `Node.js 18+`
+需要 Python 3.9+ 与 Node.js 18+。
 
-### 后端启动
+### 后端
 
-```
+```bash
 cd backend
 python -m venv venv
-# Windows
-venv\Scripts\activate
-# macOS / Linux
-source venv/bin/activate
-
+venv\Scripts\activate          # macOS / Linux: source venv/bin/activate
 pip install -r requirements.txt
-python run.py
-# 服务地址：http://localhost:5000/
-# 首次运行自动创建数据表，SQLite数据库文件生成在 backend/ 目录
+python run.py                  # http://localhost:5000
 ```
 
-### 前端启动
+首次启动会自动建表（SQLite 文件落在 `backend/`）。
 
-```
+### 前端
+
+```bash
 cd frontend
 npm install
-npm run dev
-# 前端地址：http://localhost:3000/
-# Vite已配置/api代理转发至后端 5000端口，无需额外修改配置
+npm run dev                    # http://localhost:3000
 ```
 
-## 自检体系（项目核心特色）
+Vite 已配置 `/api` → `http://localhost:5000` 代理，前端无需额外配置。
 
-术数开发最隐蔽的 bug，不是程序崩溃，而是卦象看似正常，但纳甲、世应、节气等细节计算出错。
-本项目不单单以 “无程序报错” 作为验证标准，而是使用**经典已知卦例回归校验**，保证算法可复现。
+---
 
-执行自检命令：
+## 自检
 
-```
+这是本项目最值得看的部分。
+
+术数实现最容易犯的错不是"程序崩了"，而是**规则写错了但看起来一切正常**——卦还是出来了，
+只是纳甲错了一位、世应反了、节气差了一天。所以这里不拿"没报错"当验证，而是用
+**结果已知的传统卦例**去核对。
+
+```bash
 cd backend
 py -c "from app.services.liuyao.selftest import main; raise SystemExit(main())"
 ```
 
-当前：共 1140 项检查，0 失败。
-校验覆盖模块：
+当前：**1140 项检查，0 失败**。覆盖范围：
 
-1. `ganzhi_selftest`：干支推算、节气换算精度，逐项比对参考值，打印时间偏差
-2. `judgment_selftest`：用神选取规则、旺衰判定、吉凶分档逻辑校验
-3. `api_selftest`：Flask 接口路由、参数校验、JSON 序列化测试；使用内存 SQLite，不写入磁盘
-4. `meihua_selftest`：梅花易数起卦、体用生克、变卦生成，内置标准答案用例
-5. 统计检验：铜钱摇卦模型校验，三次投掷为独立事件，服从二项分布 B (3, ½)，验证随机模型合理性
+| 自检 | 验的是什么 |
+| --- | --- |
+| `ganzhi_selftest` | 干支推算与**节气精度**——与参考值逐项比对并打印偏差秒数，不隐藏误差 |
+| `judgment_selftest` | 用神取法、旺衰判定、吉凶分档 |
+| `api_selftest` | 用 Flask 测试客户端打**真实路由**（蓝图注册、参数校验、JSON 序列化都在范围内），数据库用内存 SQLite，不写盘 |
+| `meihua_selftest` | 梅花易数起卦、体用生克、变卦，含已知答案的用例 |
+| 统计检验 | 三枚铜钱须为三次独立投掷（二项分布 B(3, ½)）——检验的是**铜钱模型本身**，而不只是代码没报错 |
 
-> 
-> 历史 Bug 案例：前端传递带时区的 ISO 时间串（`toISOString()` 末尾带 Z），早期引擎直接按本地无时间戳时间解析，会造成时间起卦异常。旧测试用例使用不带时区字符串，未能覆盖该场景；现已补充两种格式的测试用例。
+其中一条回归测试的由来值得一提：前端发的是带时区的 ISO 串（`toISOString()` 以 `Z` 结尾），
+而引擎按 naive 当地时间处理，时间起卦曾因此直接抛异常。它此前没被发现，是因为**旧验证用手写的
+无时区串绕过了这条路径**。现在两种形状都在测试里。
 
-## 项目目录结构
+---
 
-```
-玄镜易/
-├── backend/
-│   ├── app/
-│   │   ├── __init__.py                 # 应用工厂 create_app()
-│   │   ├── config.py                   # 环境配置：开发/测试/生产
-│   │   ├── models/
-│   │   │   └── hexagram.py             # SQLAlchemy 占卜记录等数据模型
-│   │   ├── routes/
-│   │   │   ├── liuyao_routes.py        # 六爻接口蓝图
-│   │   │   └── divination_routes.py    # 梅花易数 + 历史记录蓝图
-│   │   └── services/
-│   │       ├── liuyao/                 # 六爻术数内核，纯函数，不绑定Flask
-│   │       │   ├── constants.py        # 八卦、六十四卦、纳甲、六亲、六神基础数据表
-│   │       │   ├── ganzhi.py           # 干支、四柱、节气计算
-│   │       │   ├── casting.py          # 铜钱起爻逻辑
-│   │       │   ├── hexagrams.py         # 卦库、装卦处理
-│   │       │   ├── paipan.py           # 排盘：纳甲、六亲、世应、六神、伏神、旬空
-│   │       │   ├── judgment.py         # 用神、旺衰、吉凶判定
-│   │       │   ├── *_selftest.py       # 分层单元自检
-│   │       │   └── selftest.py         # 自检统一入口
-│   │       ├── divination_engine.py    # 梅花易数核心引擎
-│   │       ├── meihua_selftest.py      # 梅花易数自检
-│   │       └── mapping_service.py      # 卦象数据→解读文本映射
-│   ├── run.py
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── pages/                      # 首页 / 六爻 / 梅花 / 历史 / 关于
-│   │   ├── components/
-│   │   │   ├── PageShell.tsx           # 全站页面统一骨架
-│   │   │   ├── Header.tsx / Footer.tsx / Layout.tsx
-│   │   │   ├── liuyao/                 # 摇卦舞台、龟壳、铜钱、爻组件、解读面板
-│   │   │   └── divination/              # 八卦盘、卦画组件
-│   │   ├── styles/
-│   │   │   ├── index.css               # 全局设计令牌，唯一色值来源
-│   │   │   ├── liuyao.css              # 六爻摇卦仪式、铜钱样式
-│   │   │   ├── divination.css          # 八卦盘、成卦动画
-│   │   │   └── ui.ts                   # 按钮、卡片、输入框等基础UI原语
-│   │   ├── services/liuyaoApi.ts
-│   │   └── types/liuyao.ts
-│   ├── public/assets/                  # 龟甲等静态素材资源
-│   └── vite.config.ts
-├── docs/                               # 设计文档、算法文档、架构文档
-├── docker-compose.yml
-└── README.md
-```
+**分层约定**：`services/` 里的术数内核是**纯函数**，不依赖 Flask，可以单独调用与测试；
+路由层只做参数校验、调内核、拼 JSON。所以自检能脱离 HTTP 直接验算理。
 
-> 
-> 分层约定：`services` 目录下术数内核全部为纯函数，不依赖 Flask，可独立调用与单元测试；路由层仅负责参数校验、调用内核、组装返回 JSON，让自检可以脱离 HTTP 直接验算底层逻辑。
+---
 
-## API 接口一览
+## API 一览
 
-统一接口前缀：`/api/v1`
+统一前缀 `/api/v1`。
 
-### 六爻
+**六爻**
 
-表格
-
-| 请求方式 | 路径 | 说明 |
+| 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| POST | `/liuyao/toss` | 摇取单爻 |
-| POST | `/liuyao/toss-six` | 一次性生成六爻 |
-| POST | `/liuyao/paipan` | 装卦排盘 + 断卦计算 |
-| GET | `/liuyao/topics` | 占问事项分类 |
-| GET/POST | `/liuyao/sizhu` | 四柱干支计算 |
-| GET | `/liuyao/hexagrams` | 六十四卦基础信息 |
-| GET | `/liuyao/trigrams` | 八卦基础信息 |
-| GET | `/liuyao/solar-terms` | 节气数据 |
+| POST | `/liuyao/toss` | 摇一爻 |
+| POST | `/liuyao/toss-six` | 一次摇出六爻 |
+| POST | `/liuyao/paipan` | 装卦排盘并断卦 |
+| GET | `/liuyao/topics` | 问事类别 |
+| GET/POST | `/liuyao/sizhu` | 四柱干支 |
+| GET | `/liuyao/hexagrams` | 六十四卦清单 |
+| GET | `/liuyao/trigrams` | 八卦 |
+| GET | `/liuyao/solar-terms` | 节气 |
 
-### 梅花易数 & 历史记录
+**梅花易数与历史**
 
-表格
-
-| 请求方式 | 路径 | 说明 |
+| 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| POST | `/divination/query` | 起卦（时间起卦 / 数字起卦） |
-| GET | `/divination/history` | 历史记录分页列表 |
-| GET | `/divination/history/:id` | 单条卦例详情 |
-| DELETE | `/divination/history/:id` | 删除单条记录 |
-| DELETE | `/divination/history` | 清空全部记录，返回实际删除条数（幂等接口） |
+| POST | `/divination/query` | 起卦（时间／数字） |
+| GET | `/divination/history` | 历史列表（分页） |
+| GET | `/divination/history/<id>` | 单条详情 |
+| DELETE | `/divination/history/<id>` | 删除单条 |
+| DELETE | `/divination/history` | 清空全部（返回实际删除条数，幂等） |
 | GET | `/hexagrams` | 卦象基础数据 |
-| GET | `/health` | 服务健康检查 |
+| GET | `/health` | 健康检查 |
+
+---
 
 ## 设计系统
 
-色彩与质感统一托管，`frontend/src/index.css` 的 CSS 令牌是全站唯一色值来源；`tailwind.config.js` 读取令牌，组件直接引用令牌类名。更换主题配色无需修改业务组件。
+配色与质感集中在一处：`frontend/src/index.css` 的令牌区块是**全站唯一色值来源**，
+`tailwind.config.js` 只负责读取、组件只使用令牌类名，换配色不需要动组件。
 
-- 通道三元组：例如 `--xj-gold: 198 165 103`，支持 `rgb(var(--xj-gold) / 透明度)` 写法，兼容 Tailwind 透明度修饰符（如`bg-xuanjing-gold/20`）
-- 完整色值：例如 `--xj-shell-deep: #17110A`，可直接使用
-页面骨架由 `PageShell.tsx` 统一管控内边距、内容最大宽度、纵向间距、页头规范。
-按钮、卡片、输入框等基础 UI 原语统一写在 `styles/ui.ts`，页面不再写内联长 class 串，解决同类控件尺寸不一致、页面切换时组件跳动问题。
-青铜、铜钱色值均参考实物采样，非主观调参。
+- 令牌分两类：**通道三元组**（如 `--xj-gold: 198 165 103`）供 `rgb(var(--xj-gold) / <alpha-value>)`
+  使用，因此 `bg-xuanjing-gold/20` 这类透明度修饰符可用；**完整色值**（如 `--xj-shell-deep: #17110A`）直接使用。
+- 布局骨架由 `components/PageShell.tsx` 统一（内边距、内容宽度、竖向节奏、页头规格）。
+- 按钮／卡片／输入框等原语集中在 `styles/ui.ts`，页面里不再内联 class 串——
+  同一类控件此前有五种尺寸，翻页时按钮会轻微跳动。
 
-## 已知边界与实现偏差
+青铜与铜钱的色值取自实物参考与截图采样，不是凭感觉调的。
 
-> 
-> 全部差异如实标注，方便使用者判断适用范围
+---
 
-1. 时间起卦：当前版本公历月日取数；古法以农历为准。年支、时支干支计算精准，该偏差会在界面与 API 中标注，后续补齐农历换算后修正。
-2. 断卦评分：部分评分数值为工程权重设定，并非古籍固定数值，仅用于结果排序、吉凶分档；判定依据清单不受权重影响。六爻结果页、关于页均标注此说明，请优先参考原始判定依据。
-3. 用户鉴权：预留 JWT 配置，但尚未接入账号系统，**请勿直接部署在公网**。
-4. 缓存：Redis 缓存配置预留，暂未接入，全部计算实时执行。
-5. 数据持久化：六爻完整断卦结果暂未入库；历史记录目前仅保存梅花易数起卦信息。
-6. Docker：`docker-compose.yml` 已编写，但`Dockerfile.frontend`尚未创建，`docker-compose up`暂时无法拉起完整服务；优先使用本地开发方式运行。
+## 已知边界与偏差
 
-## 文档清单
+如实列出，避免误用：
 
-表格
+- **时间起卦用公历月日**取数，古法用农历。年支、时支为干支准确值，此偏差在界面与 API 中均如实标注，
+  待农历换算补齐后修正。
+- **少数评分数值是工程设定的权重**，不是经典数据——它用于排序与分档，换一套权重数值就会变，
+  而依据清单不变。六爻结果页与关于页均标注了这一点，**请以依据为准**。
+- **无用户系统与鉴权**：`config.py` 中的 JWT 配置为预留，尚未接线，请勿直接暴露到公网。
+- **Redis 缓存配置为预留**，未接线（未引入 Flask-Caching），当前所有计算都是实时完成的。
+- **六爻的断卦结果尚未落库**：历史记录目前只保存梅花易数的起卦。
+- **Docker 编排**：`docker-compose.yml` 与 `Dockerfile.backend`／`Dockerfile.frontend` 均已就绪，
+  本机未安装 Docker 尚未实测容器构建，请以本地开发方式运行为准。
 
-| 文档 | 内容 |
+---
+
+## 文档
+
+| 文件 | 内容 |
 | --- | --- |
-| docs/ARCHITECTURE.md | 系统架构说明 |
-| docs/ALGORITHM.md | 术数算法细节 |
-| docs/DESIGN.md | 视觉设计规范 |
-| docs/SETUP.md | 环境部署指南 |
-| docs/CONTRIBUTING.md | 项目开发参与说明 |
-| docs/ASSET_SPEC.md | 静态资源规范 |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 系统架构 |
+| [docs/ALGORITHM.md](docs/ALGORITHM.md) | 算法说明 |
+| [docs/DESIGN.md](docs/DESIGN.md) | 视觉与设计规范 |
+| [docs/SETUP.md](docs/SETUP.md) | 环境与部署 |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | 参与开发 |
+| [docs/ASSET_SPEC.md](docs/ASSET_SPEC.md) | 静态资源规格 |
 
-> 
-> 备注：文档初稿写于项目早期，部分模块划分、配色、Docker 部署步骤尚未同步至最新代码，**以 README 和源码为准**，正在持续校正。
+> 注：这些文档写于项目早期，部分内容（模块划分、配色、Docker 步骤）尚未跟上当前代码，
+> 以本 README 与代码为准，正在逐步校正。
 
-## 开源许可
+---
 
-暂未选定开源协议。在确定许可前，本项目代码**禁止用于商业分发**。
+## 许可
+
+本项目以 [MIT License](LICENSE) 开源，可自由使用、修改与分发（含商用），仅需保留版权声明。
+
+依赖均为宽松许可（Flask、React、Vite、Tailwind CSS、Framer Motion 等皆为 MIT/BSD 系），无 GPL 传染性。

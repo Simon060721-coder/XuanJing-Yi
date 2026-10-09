@@ -4,6 +4,7 @@ import Coin, { COIN_SLOT_X } from './Coin'
 import TurtleShell from './TurtleShell'
 import { TURTLE_ASSET } from '../../config/turtle'
 import type { CoinFace } from '../../types/liuyao'
+import { useLanguage } from '../../i18n'
 
 /** 一轮摇卦的阶段 */
 export type RitualPhase =
@@ -23,6 +24,7 @@ interface RitualStageProps {
 }
 
 export default function RitualStage({ phase, faces, roundKey, showFaces }: RitualStageProps) {
+  const { t } = useLanguage()
   const flying = phase === 'flying' || phase === 'settled'
 
   // 出钱口的纵坐标由素材配置决定：换成自己的图后只需调 config，不必改 CSS
@@ -60,7 +62,7 @@ export default function RitualStage({ phase, faces, roundKey, showFaces }: Ritua
               }`}
               style={{ left: `${COIN_SLOT_X[i]}px` }}
             >
-              {face}
+              {t(face)}
             </span>
           ))}
         </div>

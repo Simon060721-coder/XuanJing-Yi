@@ -5,6 +5,7 @@ import HexagramFigure from '../components/divination/HexagramFigure'
 import PageShell from '../components/PageShell'
 import { BTN_PRIMARY, BTN_OUTLINE, BTN_GHOST, FIELD, FIELD_COMPACT } from '../styles/ui'
 import '../styles/divination.css'
+import { useLanguage } from '../i18n'
 
 /* ── 时序 ────────────────────────────────────────────────────────────────
    定调是「起卦静、成卦强」，所以两段的节奏刻意不同：
@@ -59,16 +60,17 @@ interface TiyongRowProps {
 function TiyongRow({
   bodyName, bodyElement, useName, useElement, relation, relationLabel,
 }: TiyongRowProps) {
+  const { t } = useLanguage()
   const tag = (which: string, name: string, element: string, isBody: boolean) => (
     <div className="text-center">
-      <div className="text-[11px] tracking-widest text-xuanjing-paper-faint">{which}卦</div>
+      <div className="text-[11px] tracking-widest text-xuanjing-paper-faint">{t(which)}卦</div>
       <div
         className={`mt-1 font-heading text-xl ${
           isBody ? 'text-xuanjing-gold' : 'text-xuanjing-jade-bright'
         }`}
       >
-        {name}
-        <span className="ml-1 text-sm opacity-80">{element}</span>
+        {t(name)}
+        <span className="ml-1 text-sm opacity-80">{t(element)}</span>
       </div>
     </div>
   )
@@ -78,12 +80,12 @@ function TiyongRow({
       <div className="flex items-center justify-center gap-5">
         {tag('体', bodyName, bodyElement, true)}
         <div className="tiyong-arrow min-w-[116px] text-center text-sm text-xuanjing-gold">
-          {RELATION_FLOW[relation] ?? '体 用 相 参'}
+          {t(RELATION_FLOW[relation] ?? '体 用 相 参')}
         </div>
         {tag('用', useName, useElement, false)}
       </div>
       <p className="mt-4 text-center text-xs tracking-wide text-xuanjing-paper-dim">
-        {relationLabel}
+        {t(relationLabel)}
       </p>
     </div>
   )
@@ -101,6 +103,7 @@ function TiyongRow({
  * 「UTC 填进本地解析控件」的 8 小时偏差。
  */
 export default function DivinationPage() {
+  const { t } = useLanguage()
   const [phase, setPhase] = useState<Phase>('idle')
   const [method, setMethod] = useState<Method | null>(null)
   const [result, setResult] = useState<any>(null)
@@ -161,7 +164,7 @@ export default function DivinationPage() {
   }
 
   const fail = (e: unknown) => {
-    setError(e instanceof Error ? e.message : '起卦失败，请稍后重试。')
+    setError(e instanceof Error ? e.message : t('起卦失败，请稍后重试。'))
     setPhase('idle')
     setDimmed(false)
   }
@@ -236,7 +239,7 @@ export default function DivinationPage() {
   const castManual = async () => {
     const nums = manual.map((v) => parseInt(v, 10))
     if (nums.some((n) => !Number.isFinite(n) || n < 1 || n > 99)) {
-      setError('三个数字均需在 1-99 之间')
+      setError(t('三个数字均需在 1-99 之间'))
       return
     }
     setMethod('numbers')
@@ -282,7 +285,7 @@ export default function DivinationPage() {
   }
 
   return (
-    <PageShell title="梅花易数" subtitle="以数起卦 · 观其体用">
+    <PageShell title={t('梅花易数')} subtitle={t('以数起卦 · 观其体用')}>
       <div>
         {/* ── 盘 ───────────────────────────────────────────────────── */}
         <div
@@ -306,13 +309,13 @@ export default function DivinationPage() {
         {/* ── 状态与取数 ───────────────────────────────────────────── */}
         <div className="mx-auto mt-8 min-h-[4rem] max-w-xl text-center">
           {phase === 'idle' && numbers.length === 0 && (
-            <p className="quiet-hint font-heading text-base">心中默想所问之事</p>
+            <p className="quiet-hint font-heading text-base">{t('心中默想所问之事')}</p>
           )}
           {phase === 'casting' && method === 'time' && numbers.length === 0 && (
-            <p className="quiet-hint font-heading text-base">取此刻之数…</p>
+            <p className="quiet-hint font-heading text-base">{t('取此刻之数…')}</p>
           )}
           {phase === 'casting' && method === 'numbers' && numbers.length < 3 && (
-            <p className="quiet-hint font-heading text-base">点盘三下，数自此刻而生</p>
+            <p className="quiet-hint font-heading text-base">{t('点盘三下，数自此刻而生')}</p>
           )}
 
           {numbers.length > 0 && (
@@ -343,7 +346,7 @@ export default function DivinationPage() {
             <div className="flex items-start justify-center gap-8 sm:gap-14">
               <div>
                 <div className="mb-3 text-center text-[11px] tracking-widest text-xuanjing-paper-faint">
-                  本卦
+                  {t('本卦')}
                 </div>
                 <HexagramFigure
                   yaos={hl.yaos}
@@ -356,14 +359,14 @@ export default function DivinationPage() {
                   tiyong={revealStep >= 4}
                 />
                 <div className="mt-4 text-center font-heading text-lg text-xuanjing-paper">
-                  {hl.primary_hexagram}
+                  {t(hl.primary_hexagram)}
                 </div>
               </div>
 
               {revealStep >= 3 && (
                 <div className="hex-separate">
                   <div className="mb-3 text-center text-[11px] tracking-widest text-xuanjing-paper-faint">
-                    变卦
+                    {t('变卦')}
                   </div>
                   <HexagramFigure
                     yaos={hl.yaos}
@@ -373,7 +376,7 @@ export default function DivinationPage() {
                     lowerTrigram={hl.lower.name}
                   />
                   <div className="mt-4 text-center font-heading text-lg text-xuanjing-paper-dim">
-                    {hl.secondary_hexagram}
+                    {t(hl.secondary_hexagram)}
                   </div>
                 </div>
               )}
@@ -396,10 +399,10 @@ export default function DivinationPage() {
         {phase === 'done' && advice && (
           <div className="reveal-in mx-auto mt-12 max-w-xl text-center">
             <div className="font-heading text-2xl tracking-widest text-xuanjing-gold">
-              {analysis?.fortune_label}
+              {t(analysis?.fortune_label)}
             </div>
             <p className="mt-5 text-sm leading-loose text-xuanjing-paper-dim">
-              {advice.main_interpretation}
+              {t(advice.main_interpretation)}
             </p>
             {Array.isArray(advice.keywords) && advice.keywords.length > 0 && (
               <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -408,13 +411,13 @@ export default function DivinationPage() {
                     key={i}
                     className="rounded-full border border-xuanjing-line px-3 py-1 text-xs text-xuanjing-paper-faint"
                   >
-                    {k}
+                    {t(k)}
                   </span>
                 ))}
               </div>
             )}
             <button type="button" onClick={reset} className={`mt-10 ${BTN_GHOST}`}>
-              再起一卦
+              {t('再起一卦')}
             </button>
           </div>
         )}
@@ -427,20 +430,20 @@ export default function DivinationPage() {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               maxLength={50}
-              placeholder="默想所问之事（选填）"
+              placeholder={t('默想所问之事（选填）')}
               className={`${FIELD} text-center font-heading`}
             />
 
             <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
               <button type="button" onClick={castTime} className={BTN_OUTLINE}>
-                以时起卦
+                {t('以时起卦')}
               </button>
               <button
                 type="button"
                 onClick={startNumbers}
                 className={BTN_OUTLINE}
               >
-                以数起卦
+                {t('以数起卦')}
               </button>
             </div>
 
@@ -449,7 +452,7 @@ export default function DivinationPage() {
               onClick={() => setShowManual((v) => !v)}
               className="mt-7 text-xs text-xuanjing-paper-faint transition-colors duration-200 hover:text-xuanjing-paper-dim"
             >
-              或自己报数
+              {t('或自己报数')}
             </button>
 
             {showManual && (
@@ -472,13 +475,13 @@ export default function DivinationPage() {
                   />
                 ))}
                 <button type="button" onClick={castManual} className={BTN_PRIMARY}>
-                  起卦
+                  {t('起卦')}
                 </button>
               </div>
             )}
 
             <p className="mt-9 text-[11px] leading-relaxed text-xuanjing-paper-faint">
-              以时起卦取此刻之数；以数起卦可点盘三下由天定数，或自己报数
+              {t('以时起卦取此刻之数；以数起卦可点盘三下由天定数，或自己报数')}
             </p>
           </div>
         )}

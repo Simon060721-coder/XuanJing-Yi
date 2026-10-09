@@ -1,0 +1,12 @@
+.git
+.gitignore
+_tmp
+docs
+backend/instance
+backend/.venv
+**/__pycache__
+**/*.pyc
+frontend/node_modules
+frontend/dist
+*.db
+*.sqlite3

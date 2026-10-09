@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import type { ReactNode } from 'react'
+import { useLanguage } from '../i18n'
 
 interface PageShellProps {
   title: string
@@ -33,6 +35,13 @@ export default function PageShell({
   divider = true,
   children,
 }: PageShellProps) {
+  const { t } = useLanguage()
+
+  // 浏览器标签页标题跟随页面与语言（繁体时自动转换）
+  useEffect(() => {
+    document.title = t(title)
+  }, [title, t])
+
   const titleClass =
     size === 'lg'
       ? 'font-heading text-6xl font-bold text-xuanjing-paper md:text-7xl'

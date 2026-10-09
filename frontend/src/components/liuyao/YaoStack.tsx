@@ -1,5 +1,6 @@
 import YaoBars from './YaoBars'
 import type { TossResult } from '../../types/liuyao'
+import { useLanguage } from '../../i18n'
 
 interface YaoStackProps {
   /** 已摇出的爻，自初爻起累积 */
@@ -14,6 +15,7 @@ const POSITION_NAMES = ['初', '二', '三', '四', '五', '上']
 
 /** 六爻堆叠：自上爻至初爻自上而下排列，随摇卦逐爻亮起 */
 export default function YaoStack({ yaos, activePosition, panReady }: YaoStackProps) {
+  const { t } = useLanguage()
   const byPosition = new Map(yaos.map((y) => [y.position, y]))
   const newest = yaos.length > 0 ? yaos[yaos.length - 1].position : null
 
@@ -39,7 +41,7 @@ export default function YaoStack({ yaos, activePosition, panReady }: YaoStackPro
             </span>
             {bar}
             <span className="w-16 flex-none text-xs text-xuanjing-paper-dim">
-              {yao ? `${yao.label}${yao.moving ? '·动' : ''}` : '—'}
+              {yao ? `${t(yao.label)}${yao.moving ? t('·动') : ''}` : '—'}
             </span>
           </div>
         )
@@ -48,13 +50,13 @@ export default function YaoStack({ yaos, activePosition, panReady }: YaoStackPro
       <div className="mt-4 border-t border-xuanjing-line pt-3 text-xs text-xuanjing-paper-faint">
         {yaos.length < 6 ? (
           <>
-            已摇 <span className="font-semibold text-xuanjing-gold">{yaos.length}</span> / 6 爻
-            <span className="ml-2">自初爻向上依次装卦</span>
+            {t('已摇')} <span className="font-semibold text-xuanjing-gold">{yaos.length}</span> / 6 {t('爻')}
+            <span className="ml-2">{t('自初爻向上依次装卦')}</span>
           </>
         ) : panReady ? (
-          <span className="text-xuanjing-gold">六爻已足 · 卦已装成</span>
+          <span className="text-xuanjing-gold">{t('六爻已足 · 卦已装成')}</span>
         ) : (
-          <span className="text-xuanjing-gold">六爻已足，正在装卦…</span>
+          <span className="text-xuanjing-gold">{t('六爻已足，正在装卦…')}</span>
         )}
       </div>
     </div>

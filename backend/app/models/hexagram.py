@@ -26,7 +26,7 @@ class Hexagram(db.Model):
         }
 
 class DivinationQuery(db.Model):
-    """占卜查询记录"""
+    """起卦查询记录"""
     __tablename__ = 'divination_queries'
     
     id = db.Column(db.Integer, primary_key=True)

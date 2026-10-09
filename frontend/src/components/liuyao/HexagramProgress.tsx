@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import type { LiuyaoPan, TossResult, Trigram } from '../../types/liuyao'
+import { useLanguage } from '../../i18n'
 
 interface HexagramProgressProps {
   /** 已摇出的爻，自初爻起 */
@@ -61,24 +62,25 @@ interface TrigramRowProps {
 }
 
 function TrigramRow({ label, hint, slice, trigram }: TrigramRowProps) {
+  const { t } = useLanguage()
   return (
     <div className="flex items-start gap-4">
       <TrigramLines yaos={slice} />
       <div className="min-w-0 flex-1">
         <div className="text-xs text-xuanjing-paper-faint">
-          {label}（{hint}）
+          {t(label)}（{t(hint)}）
         </div>
         {trigram ? (
           <div className="mt-1.5 font-heading text-lg text-xuanjing-gold">
-            {trigram.name}
+            {t(trigram.name)}
             <span className="ml-1.5 text-base">{trigram.symbol}</span>
             <span className="ml-2 font-body text-xs text-xuanjing-paper-dim">
-              {trigram.nature}·{trigram.element}
+              {t(trigram.nature)}·{t(trigram.element)}
             </span>
           </div>
         ) : (
           <div className="mt-2 text-xs text-xuanjing-paper-faint">
-            还差 {3 - slice.length} 爻
+            {t(`还差 ${3 - slice.length} 爻`)}
           </div>
         )}
       </div>
@@ -96,6 +98,7 @@ function TrigramRow({ label, hint, slice, trigram }: TrigramRowProps) {
  * 六爻齐后再与后端装卦结果比对一次，不一致会打印告警（正常时沉默）。
  */
 export default function HexagramProgress({ yaos, trigrams, pan }: HexagramProgressProps) {
+  const { t } = useLanguage()
   const inner = trigramOf(yaos.slice(0, 3), trigrams)
   const outer = trigramOf(yaos.slice(3, 6), trigrams)
   const innerName = inner?.name ?? null
@@ -116,13 +119,13 @@ export default function HexagramProgress({ yaos, trigrams, pan }: HexagramProgre
   return (
     <div className="glass-card h-fit rounded-3xl border border-xuanjing-line p-6">
       <div className="flex items-baseline justify-between">
-        <h2 className="font-heading text-lg font-semibold text-xuanjing-gold">卦象成形</h2>
+        <h2 className="font-heading text-lg font-semibold text-xuanjing-gold">{t('卦象成形')}</h2>
         <span className="text-xs text-xuanjing-paper-faint">
-          已摇 <span className="text-xuanjing-gold">{yaos.length}</span> / 6 爻
+          {t('已摇')} <span className="text-xuanjing-gold">{yaos.length}</span> / 6 {t('爻')}
         </span>
       </div>
       <p className="mb-5 mt-1 text-[11px] leading-relaxed text-xuanjing-paper-faint">
-        初二三爻定内卦，四五六爻定外卦
+        {t('初二三爻定内卦，四五六爻定外卦')}
       </p>
 
       <div className="space-y-5">
@@ -133,31 +136,31 @@ export default function HexagramProgress({ yaos, trigrams, pan }: HexagramProgre
       {pan && (
         <div className="mt-6 space-y-2.5 border-t border-xuanjing-line pt-5">
           <div className="flex items-baseline justify-between">
-            <span className="text-xs text-xuanjing-paper-faint">本卦</span>
+            <span className="text-xs text-xuanjing-paper-faint">{t('本卦')}</span>
             <span className="font-heading text-base text-xuanjing-gold">
-              {pan.ben.name}
+              {t(pan.ben.name)}
               <span className="ml-2 text-sm text-xuanjing-paper-dim">{pan.ben.symbols}</span>
             </span>
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-xs text-xuanjing-paper-faint">
-              {pan.is_jing ? '六爻皆静' : `动爻 ${pan.moving_lines.join('、')}`}
+              {pan.is_jing ? t('六爻皆静') : t(`动爻 ${pan.moving_lines.join('、')}`)}
             </span>
             {pan.is_jing ? (
-              <span className="text-sm text-xuanjing-paper-dim">无变卦</span>
+              <span className="text-sm text-xuanjing-paper-dim">{t('无变卦')}</span>
             ) : (
               <span className="font-heading text-base text-xuanjing-gold">
-                {pan.bian.name}
+                {t(pan.bian.name)}
                 <span className="ml-2 text-sm text-xuanjing-paper-dim">{pan.bian.symbols}</span>
               </span>
             )}
           </div>
           <div className="flex items-baseline justify-between pt-1 text-[11px] text-xuanjing-paper-dim">
             <span>
-              {pan.ben.palace}宫 · {pan.ben.palace_element}
+              {t(pan.ben.palace)}{t('宫')} · {t(pan.ben.palace_element)}
             </span>
             <span>
-              {pan.ben.stage}　世{pan.ben.shi} 应{pan.ben.ying}
+              {t(pan.ben.stage)}　{t('世')}{pan.ben.shi} {t('应')}{pan.ben.ying}
             </span>
           </div>
         </div>

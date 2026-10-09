@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 
 import { TURTLE_ASSET } from '../../config/turtle'
+import { useLanguage } from '../../i18n'
 
 interface TurtleShellProps {
   /** 正在摇晃 */
@@ -87,6 +88,7 @@ const SUTURE_XS = [84, 136, 194, 246]
  * 注意 hooks 必须全部在分支之前调用，否则素材加载失败切换分支时会打乱 hook 顺序。
  */
 export default function TurtleShell({ shaking }: TurtleShellProps) {
+  const { t } = useLanguage()
   const [assetFailed, setAssetFailed] = useState(false)
 
   const { dome, tabs, altTabs, rimEdge, costals, growth, plates, ridge } = useMemo(() => {
@@ -156,7 +158,7 @@ export default function TurtleShell({ shaking }: TurtleShellProps) {
       >
         <img
           src={asset.src}
-          alt="龟甲"
+          alt={t('龟甲')}
           className={`ritual-asset${asset.shadow ? ' ritual-asset-shadow' : ''}`}
           onError={() => {
             console.info(
@@ -172,7 +174,7 @@ export default function TurtleShell({ shaking }: TurtleShellProps) {
 
   return (
     <div className={wrapperClass}>
-      <svg viewBox="0 0 340 240" className="h-auto w-full" role="img" aria-label="龟甲">
+      <svg viewBox="0 0 340 240" className="h-auto w-full" role="img" aria-label={t('龟甲')}>
         <defs>
           <radialGradient id="xjGroundShadow" cx="50%" cy="50%" r="50%">
             <stop offset="0%" className="shell-stop-shadow" />

@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 
 import type { CoinFace } from '../../types/liuyao'
+import { useLanguage } from '../../i18n'
 
 /** 三枚铜钱的落点（相对中点，单位 px） */
 export const COIN_SLOT_X = [-104, 0, 104]
@@ -32,6 +33,7 @@ interface CoinProps {
  * 停定角度必须是 360 的整数倍（背）或整数倍加 180（字），否则会停在半路。
  */
 export default function Coin({ index, face, flying }: CoinProps) {
+  const { t } = useLanguage()
   const endRot = SPINS * 360 + (face === '字' ? 180 : 0)
 
   const style = {
@@ -53,16 +55,16 @@ export default function Coin({ index, face, flying }: CoinProps) {
             四字须贴边放：方孔占中央 27%，字距过小会被孔压住 */}
         <div className="coin-face coin-face-front">
           <span className="coin-char font-heading" style={{ top: '4%', left: '50%', transform: 'translateX(-50%)' }}>
-            玄
+            {t('玄')}
           </span>
           <span className="coin-char font-heading" style={{ right: '5%', top: '50%', transform: 'translateY(-50%)' }}>
-            镜
+            {t('镜')}
           </span>
           <span className="coin-char font-heading" style={{ bottom: '4%', left: '50%', transform: 'translateX(-50%)' }}>
-            通
+            {t('通')}
           </span>
           <span className="coin-char font-heading" style={{ left: '5%', top: '50%', transform: 'translateY(-50%)' }}>
-            宝
+            {t('宝')}
           </span>
           <div className="coin-hole" />
         </div>

@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { useLanguage } from '../../i18n'
 
 interface BaguaPlateProps {
   /** 待命时缓慢自转 */
@@ -37,12 +38,13 @@ const PIT_R = 20
  * 待命时缓慢自转（60s 一圈，几乎看不出在动，只看得出"活着"）。
  */
 export default function BaguaPlate({ spinning, casting, dimmed, lit }: BaguaPlateProps) {
+  const { t } = useLanguage()
   return (
     <div
       className={`bagua-wrap ${spinning && !casting ? 'bagua-spin' : ''} ${casting ? 'bagua-settle' : ''} ${dimmed ? 'bagua-dim' : ''}`}
       style={{ '--lit-count': String(lit.length) } as unknown as CSSProperties}
     >
-      <svg viewBox="0 0 400 400" className="h-auto w-full" role="img" aria-label="八卦盘">
+      <svg viewBox="0 0 400 400" className="h-auto w-full" role="img" aria-label={t('八卦盘')}>
         <defs>
           {/* 盘面比龟甲更暗：大面积平滑金属若用得亮，会读成镜子而不是法器 */}
           <radialGradient id="xjPlateGrad" cx="34%" cy="24%" r="84%">

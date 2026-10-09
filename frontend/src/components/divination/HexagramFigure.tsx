@@ -1,3 +1,5 @@
+import { useLanguage } from '../../i18n'
+
 interface HexYao {
   position: number
   position_name: string
@@ -39,6 +41,7 @@ export default function HexagramFigure({
   flipping = false,
   tiyong = false,
 }: HexagramFigureProps) {
+  const { t } = useLanguage()
   const bodyIsUpper = bodyTrigram === upperTrigram
   const bodyIsLower = bodyTrigram === lowerTrigram
 
@@ -60,7 +63,7 @@ export default function HexagramFigure({
         return (
           <div key={y.position} className="flex items-center gap-2.5">
             <span className="w-3 text-right text-[11px] leading-none text-xuanjing-paper-faint">
-              {y.position_name}
+              {t(y.position_name)}
             </span>
             <span className="flex w-[86px] gap-2">
               {yang ? (
@@ -82,7 +85,7 @@ export default function HexagramFigure({
               )}
             </span>
             <span className="w-[34px] text-[11px] leading-none text-xuanjing-cinnabar-text">
-              {variant === 'primary' && y.moving ? (y.is_yang ? '○ 动' : '× 动') : ''}
+              {variant === 'primary' && y.moving ? (y.is_yang ? t('○ 动') : t('× 动')) : ''}
             </span>
           </div>
         )
