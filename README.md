@@ -2,6 +2,10 @@
 
 **把易学占断写成可复算的算法，而不是随机数生成器。**
 
+![CI](https://github.com/Simon060721-coder/XuanJing-Yi/actions/workflows/ci.yml/badge.svg)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![自检](https://img.shields.io/badge/自检-1140%20项%200%20失败-brightgreen)
+
 六爻（纳甲筮法）与梅花易数两套完整的排盘、断卦引擎，配一套以青铜质感为主的古风界面：
 龟壳摇钱成卦、八卦盘取数起卦，每一步判断都能追溯到经典依据。
 
@@ -191,6 +195,18 @@ py -c "from app.services.liuyao.selftest import main; raise SystemExit(main())"
 - **六爻的断卦结果尚未落库**：历史记录目前只保存梅花易数的起卦。
 - **Docker 编排**：`docker-compose.yml` 与 `Dockerfile.backend`／`Dockerfile.frontend` 均已就绪，
   本机未安装 Docker 尚未实测容器构建，请以本地开发方式运行为准。
+- **龟壳素材为 AI 生成图**：作者持有生成记录，但为避免 MIT 分发下的使用条款争议，将其列为待确认素材，
+  组件内置矢量回退（删除素材文件即可自动切换），替换入口见 `docs/ASSET_SPEC.md`。
+
+---
+
+## Roadmap
+
+- **农历换算**：时间起卦由公历月日取数修正为农历月日取数，修复「已知边界」中标注的偏差。
+- **六爻断卦结果落库**：历史记录扩展为覆盖六爻完整排盘与断卦，与梅花易数对齐。
+- **更多术数体系**：在六爻、梅花易数之外扩展更多传统术数的可复算实现。
+- **多语言**：已提供简繁切换；后续按需扩展更多语言界面与释义。
+- **社区建设**：以贡献指南（`docs/CONTRIBUTING.md`）为基础开放 issue 规范、示例卦例库与算法讨论。欢迎通过 GitHub 提交 issue / PR 参与。
 
 ---
 
